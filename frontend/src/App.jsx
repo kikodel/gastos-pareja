@@ -72,10 +72,20 @@ export default function App() {
     return Array.from(unicas);
   }, [gastosTotales]);
 
+  const grupoActual = grupos.find((g) => g.id === filtros.grupo);
+
   return (
     <div className="app">
-      <header>
-        <h1>Gastos de la pareja</h1>
+      <header className="app-header">
+        <div className="app-header-brand">
+          <span className="app-header-badge">$</span>
+          <div>
+            <h1>Gastos Familiares</h1>
+            <p className="app-header-subtitle">
+              {grupoActual ? grupoActual.nombre : 'Panel de control de gastos'}
+            </p>
+          </div>
+        </div>
       </header>
 
       <Filtros
