@@ -20,4 +20,12 @@ function crearRespuestaError() {
   return twimlResponse.toString();
 }
 
-module.exports = { crearRespuestaConfirmacion, crearRespuestaError };
+function crearRespuestaNumeroNoRegistrado() {
+  const twimlResponse = new MessagingResponse();
+  twimlResponse.message(
+    '⚠️ Tu número no está registrado en ningún grupo familiar. Pedile al administrador que te agregue.'
+  );
+  return twimlResponse.toString();
+}
+
+module.exports = { crearRespuestaConfirmacion, crearRespuestaError, crearRespuestaNumeroNoRegistrado };

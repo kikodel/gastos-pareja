@@ -6,7 +6,7 @@ const RANGE_APPEND = `${SHEET_NAME}!A:G`;
 const RANGE_READ = `${SHEET_NAME}!A2:G`;
 const CACHE_TTL_MS = 45 * 1000;
 
-const cache = { data: null, timestamp: 0 };
+const cachePorSheet = new Map();
 
 function getAuth() {
   return new google.auth.JWT(
@@ -23,23 +23,23 @@ async function getSheetsClient() {
   return google.sheets({ version: 'v4', auth });
 }
 
-async function agregarGasto({ fecha, persona, monto, categoria, descripcion, mensajeOriginal, moneda }) {
+async function agregarGasto(spreadsheetId, { fecha, persona, monto, categoria, descripcion, mensajeOriginal, moneda }) {
   const sheets = await getSheetsClient();
   await sheets.spreadsheets.values.append({
-    spreadsheetId: env.googleSpreadsheetId,
+    spreadsheetId,
     range: RANGE_APPEND,
     valueInputOption: 'USER_ENTERED',
     requestBody: {
       values: [[fecha, persona, monto, categoria, descripcion, mensajeOriginal, moneda]],
     },
   });
-  cache.data = null;
+  cachePorSheet.delete(spreadsheetId);
 }
 
-async function leerGastosSinCache() {
+async function leerGastosSinCache(spreadsheetId) {
   const sheets = await getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: env.googleSpreadsheetId,
+    spreadsheetId,
     range: RANGE_READ,
   });
   const filas = res.data.values || [];
@@ -56,14 +56,14 @@ async function leerGastosSinCache() {
     }));
 }
 
-async function leerGastos() {
+async function leerGastos(spreadsheetId) {
   const ahora = Date.now();
-  if (cache.data && ahora - cache.timestamp < CACHE_TTL_MS) {
-    return cache.data;
+  const cacheado = cachePorSheet.get(spreadsheetId);
+  if (cacheado && ahora - cacheado.timestamp < CACHE_TTL_MS) {
+    return cacheado.data;
   }
-  const datos = await leerGastosSinCache();
-  cache.data = datos;
-  cache.timestamp = ahora;
+  const datos = await leerGastosSinCache(spreadsheetId);
+  cachePorSheet.set(spreadsheetId, { data: datos, timestamp: ahora });
   return datos;
 }
 

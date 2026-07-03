@@ -21,11 +21,25 @@ function generarMesesDisponibles(cantidad = 12) {
   return meses;
 }
 
-export default function Filtros({ filtros, onChange, personasDisponibles }) {
+export default function Filtros({ filtros, onChange, personasDisponibles, grupos }) {
   const meses = generarMesesDisponibles();
 
   return (
     <div className="filtros">
+      <label>
+        Grupo familiar
+        <select
+          value={filtros.grupo}
+          onChange={(e) => onChange({ ...filtros, grupo: e.target.value, persona: '' })}
+        >
+          {grupos.map((grupo) => (
+            <option key={grupo.id} value={grupo.id}>
+              {grupo.nombre}
+            </option>
+          ))}
+        </select>
+      </label>
+
       <label>
         Mes
         <select

@@ -1,6 +1,6 @@
 # Gastos de la pareja
 
-Registra gastos mandando un mensaje de WhatsApp al bot, los guarda en una Google Sheet y los muestra en un dashboard categorizado.
+Registra gastos mandando un mensaje de WhatsApp al bot, los guarda en una Google Sheet y los muestra en un dashboard categorizado. Soporta varios **grupos familiares** (por ejemplo, vos y tu pareja, y por separado la familia de tu hermano) compartiendo el mismo bot y numero de WhatsApp, cada uno con su propia planilla y su propio dashboard filtrado.
 
 ## Como se manda un gasto
 
@@ -35,13 +35,13 @@ Supermercado, Comida afuera, Transporte, Servicios/Cuentas, Salud, Ocio, Ropa, H
 1. Crear un proyecto en https://console.cloud.google.com/
 2. Habilitar la **Google Sheets API**.
 3. Crear un **Service Account** (IAM & Admin > Service Accounts), generar una clave JSON.
-4. Crear una Google Sheet nueva con una hoja llamada `Gastos` y esta fila de encabezados:
+4. Crear una Google Sheet nueva **por cada grupo familiar** que quieras soportar, cada una con una hoja llamada `Gastos` y esta fila de encabezados:
 
    | Fecha | Persona | Monto | Categoria | Descripcion | Mensaje Original | Moneda |
    |---|---|---|---|---|---|---|
 
-5. Compartir la Sheet con el email del service account (`...@...iam.gserviceaccount.com`), con permiso de **Editor**.
-6. Copiar el `spreadsheetId` de la URL de la sheet (el string largo entre `/d/` y `/edit`).
+5. Compartir **cada Sheet** con el mismo email del service account (`...@...iam.gserviceaccount.com`), con permiso de **Editor**.
+6. Copiar el `spreadsheetId` de cada sheet (el string largo entre `/d/` y `/edit` en la URL).
 
 ### 3. Variables de entorno
 
@@ -52,9 +52,35 @@ cp .env.example .env
 ```
 
 - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_NUMBER`: de Twilio.
-- `GOOGLE_SHEETS_SPREADSHEET_ID`: el ID de la sheet.
-- `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`: del JSON del service account (campos `client_email` y `private_key`).
-- `PERSONAS_MAP`: JSON que mapea el numero de WhatsApp de cada persona (formato `whatsapp:+54911...`) a su nombre.
+- `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`: del JSON del service account (campos `client_email` y `private_key`), compartido entre todos los grupos.
+- `GRUPOS_JSON`: un JSON con un objeto por grupo familiar. Cada grupo tiene un `nombre` (se muestra en el selector del dashboard), un `spreadsheetId` (la planilla de ese grupo) y un `personas` (mapeo de numero de WhatsApp, formato `whatsapp:+54911...`, a nombre de esa persona). Ejemplo con dos grupos:
+
+  ```json
+  {
+    "fede": {
+      "nombre": "Federico y Cande",
+      "spreadsheetId": "ID_DE_LA_SHEET_1",
+      "personas": { "whatsapp:+5491100000000": "Federico", "whatsapp:+5491100000001": "Cande" }
+    },
+    "hermano": {
+      "nombre": "Familia del hermano",
+      "spreadsheetId": "ID_DE_LA_SHEET_2",
+      "personas": { "whatsapp:+5491100000002": "Hermano", "whatsapp:+5491100000003": "Cunada" }
+    }
+  }
+  ```
+
+  Un numero de WhatsApp que no este en **ningun** grupo recibe un mensaje pidiendole al administrador que lo agregue, y no se guarda nada.
+
+#### Agregar un grupo familiar nuevo (ej. la familia de tu hermano)
+
+Como todos comparten el mismo bot y numero de Twilio, no hace falta que el hermano cree su propia cuenta de Twilio ni Railway. Solo hay que:
+
+1. Crear una Google Sheet nueva (hoja `Gastos` + encabezados de la seccion 2).
+2. Compartirla con el mismo `GOOGLE_SERVICE_ACCOUNT_EMAIL` que ya estan usando (permiso Editor).
+3. Que cada integrante de esa familia mande el codigo `join ...` al numero de Twilio sandbox desde su WhatsApp (igual que hiciste vos).
+4. Agregar un nuevo grupo dentro de `GRUPOS_JSON` (en Railway → Variables) con el `spreadsheetId` de esa sheet y los numeros de esa familia.
+5. En el dashboard va a aparecer un selector de **"Grupo familiar"** arriba de los filtros para elegir cual ver.
 
 ### 4. Instalar y correr en local
 

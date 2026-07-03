@@ -1,8 +1,23 @@
 const express = require('express');
 const { leerGastos } = require('../services/sheetsService');
 const { ORDEN_CATEGORIAS } = require('../config/categorias');
+const { obtenerGrupo } = require('../config/grupos');
 
 const router = express.Router();
+
+function resolverSpreadsheetId(req, res) {
+  const { grupo } = req.query;
+  if (!grupo) {
+    res.status(400).json({ error: 'Falta el parametro grupo' });
+    return null;
+  }
+  const grupoConfig = obtenerGrupo(grupo);
+  if (!grupoConfig) {
+    res.status(404).json({ error: `Grupo desconocido: ${grupo}` });
+    return null;
+  }
+  return grupoConfig.spreadsheetId;
+}
 
 function obtenerMesDeFecha(fecha) {
   return (fecha || '').slice(0, 7); // YYYY-MM
@@ -39,8 +54,11 @@ function calcularEvolucionMensual(gastos, persona) {
 }
 
 router.get('/', async (req, res) => {
+  const spreadsheetId = resolverSpreadsheetId(req, res);
+  if (!spreadsheetId) return;
+
   try {
-    const gastos = await leerGastos();
+    const gastos = await leerGastos(spreadsheetId);
     const filtrados = aplicarFiltros(gastos, req.query);
     res.json(filtrados.sort((a, b) => (a.fecha < b.fecha ? 1 : -1)));
   } catch (err) {
@@ -50,8 +68,11 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/resumen', async (req, res) => {
+  const spreadsheetId = resolverSpreadsheetId(req, res);
+  if (!spreadsheetId) return;
+
   try {
-    const gastos = await leerGastos();
+    const gastos = await leerGastos(spreadsheetId);
     const { mes, persona } = req.query;
     const gastosDelMes = aplicarFiltros(gastos, { mes, persona });
 

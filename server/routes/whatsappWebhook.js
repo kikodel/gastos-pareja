@@ -2,8 +2,12 @@ const express = require('express');
 const { parsearMensaje } = require('../services/parserService');
 const { categorizar } = require('../services/categorizerService');
 const { agregarGasto } = require('../services/sheetsService');
-const { crearRespuestaConfirmacion, crearRespuestaError } = require('../services/twilioService');
-const { resolverPersona } = require('../config/personas');
+const {
+  crearRespuestaConfirmacion,
+  crearRespuestaError,
+  crearRespuestaNumeroNoRegistrado,
+} = require('../services/twilioService');
+const { resolverGrupoYPersonaPorNumero } = require('../config/grupos');
 const { validateTwilioSignature } = require('../utils/validateTwilioSignature');
 
 const router = express.Router();
@@ -27,7 +31,14 @@ function formatearFecha(date) {
 }
 
 router.post('/', validateTwilioSignature, async (req, res) => {
-  const { From, Body, ProfileName } = req.body;
+  const { From, Body } = req.body;
+
+  const resuelto = resolverGrupoYPersonaPorNumero(From);
+  if (!resuelto) {
+    res.type('text/xml').send(crearRespuestaNumeroNoRegistrado());
+    return;
+  }
+
   const { monto, descripcion, original } = parsearMensaje(Body);
 
   if (monto === null) {
@@ -36,11 +47,11 @@ router.post('/', validateTwilioSignature, async (req, res) => {
   }
 
   const categoria = categorizar(descripcion);
-  const persona = resolverPersona(From, ProfileName);
+  const { persona, spreadsheetId } = resuelto;
   const fecha = formatearFecha(new Date());
 
   try {
-    await agregarGasto({
+    await agregarGasto(spreadsheetId, {
       fecha,
       persona,
       monto,

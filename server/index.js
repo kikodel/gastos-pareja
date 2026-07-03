@@ -5,6 +5,7 @@ const cors = require('cors');
 const { env } = require('./config/env');
 const whatsappWebhookRouter = require('./routes/whatsappWebhook');
 const gastosApiRouter = require('./routes/gastosApi');
+const gruposApiRouter = require('./routes/gruposApi');
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.use(express.json());
 
 app.use('/webhook/whatsapp', whatsappWebhookRouter);
 app.use('/api/gastos', gastosApiRouter);
+app.use('/api/grupos', gruposApiRouter);
 
 const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
 if (fs.existsSync(frontendDist)) {

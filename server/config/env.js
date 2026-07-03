@@ -2,12 +2,12 @@ const path = require('path');
 
 require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
 
-function parsePersonasMap(raw) {
+function parseGruposJson(raw) {
   if (!raw) return {};
   try {
     return JSON.parse(raw);
   } catch (err) {
-    throw new Error(`PERSONAS_MAP no es un JSON valido: ${err.message}`);
+    throw new Error(`GRUPOS_JSON no es un JSON valido: ${err.message}`);
   }
 }
 
@@ -29,11 +29,10 @@ const env = {
   twilioAuthToken: process.env.TWILIO_AUTH_TOKEN || '',
   twilioWhatsappNumber: process.env.TWILIO_WHATSAPP_NUMBER || '',
 
-  googleSpreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID || '',
   googleServiceAccountEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '',
   googleServiceAccountPrivateKey: (process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
 
-  personasMap: parsePersonasMap(process.env.PERSONAS_MAP),
+  grupos: parseGruposJson(process.env.GRUPOS_JSON),
 };
 
 module.exports = { env, requireEnv };

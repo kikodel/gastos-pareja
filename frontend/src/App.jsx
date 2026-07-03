@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { obtenerGastos, obtenerResumen } from './api/gastosClient';
+import { obtenerGastos, obtenerResumen, obtenerGrupos } from './api/gastosClient';
 import Filtros from './components/Filtros';
 import ResumenMes from './components/ResumenMes';
 import GraficoCategorias from './components/GraficoCategorias';
@@ -13,7 +13,8 @@ function mesActual() {
 }
 
 export default function App() {
-  const [filtros, setFiltros] = useState({ mes: mesActual(), categoria: '', persona: '' });
+  const [grupos, setGrupos] = useState([]);
+  const [filtros, setFiltros] = useState({ grupo: '', mes: mesActual(), categoria: '', persona: '' });
   const [gastos, setGastos] = useState([]);
   const [resumen, setResumen] = useState(null);
   const [gastosTotales, setGastosTotales] = useState([]);
@@ -21,6 +22,22 @@ export default function App() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    obtenerGrupos()
+      .then((lista) => {
+        setGrupos(lista);
+        if (lista.length > 0) {
+          setFiltros((actual) => ({ ...actual, grupo: actual.grupo || lista[0].id }));
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setError('No se pudieron cargar los grupos familiares.');
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!filtros.grupo) return undefined;
+
     let cancelado = false;
     setCargando(true);
     setError(null);
@@ -46,8 +63,9 @@ export default function App() {
   }, [filtros]);
 
   useEffect(() => {
-    obtenerGastos({}).then(setGastosTotales).catch(() => {});
-  }, []);
+    if (!filtros.grupo) return;
+    obtenerGastos({ grupo: filtros.grupo }).then(setGastosTotales).catch(() => {});
+  }, [filtros.grupo]);
 
   const personasDisponibles = useMemo(() => {
     const unicas = new Set(gastosTotales.map((g) => g.persona).filter(Boolean));
@@ -60,7 +78,12 @@ export default function App() {
         <h1>Gastos de la pareja</h1>
       </header>
 
-      <Filtros filtros={filtros} onChange={setFiltros} personasDisponibles={personasDisponibles} />
+      <Filtros
+        filtros={filtros}
+        onChange={setFiltros}
+        personasDisponibles={personasDisponibles}
+        grupos={grupos}
+      />
 
       {error && <p className="error">{error}</p>}
       {cargando && <p className="cargando">Cargando...</p>}

@@ -9,3 +9,8 @@ export async function obtenerResumen(filtros = {}) {
   const { data } = await axios.get('/api/gastos/resumen', { params: filtros });
   return data;
 }
+
+export async function obtenerGrupos() {
+  const { data } = await axios.get('/api/grupos');
+  return data;
+}
