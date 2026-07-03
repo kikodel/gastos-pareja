@@ -14,3 +14,8 @@ export async function obtenerGrupos() {
   const { data } = await axios.get('/api/grupos');
   return data;
 }
+
+export async function verificarPasswordGrupo(grupoId, password) {
+  const { data } = await axios.get(`/api/grupos/${grupoId}/verificar`, { params: { password } });
+  return data.ok === true;
+}

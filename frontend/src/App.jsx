@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { obtenerGastos, obtenerResumen, obtenerGrupos } from './api/gastosClient';
+import { obtenerGastos, obtenerResumen, obtenerGrupos, verificarPasswordGrupo } from './api/gastosClient';
 import Filtros from './components/Filtros';
+import PasswordGate from './components/PasswordGate';
 import ResumenMes from './components/ResumenMes';
 import GraficoCategorias from './components/GraficoCategorias';
 import EvolucionMensual from './components/EvolucionMensual';
@@ -12,6 +13,14 @@ function mesActual() {
   return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function cargarPasswordsGuardadas() {
+  try {
+    return JSON.parse(sessionStorage.getItem('gp_passwords') || '{}');
+  } catch {
+    return {};
+  }
+}
+
 export default function App() {
   const [grupos, setGrupos] = useState([]);
   const [filtros, setFiltros] = useState({ grupo: '', mes: mesActual(), categoria: '', persona: '' });
@@ -20,6 +29,13 @@ export default function App() {
   const [gastosTotales, setGastosTotales] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+  const [passwords, setPasswords] = useState(cargarPasswordsGuardadas);
+  const [passwordError, setPasswordError] = useState(null);
+  const [verificandoPassword, setVerificandoPassword] = useState(false);
+
+  useEffect(() => {
+    sessionStorage.setItem('gp_passwords', JSON.stringify(passwords));
+  }, [passwords]);
 
   useEffect(() => {
     obtenerGrupos()
@@ -35,14 +51,20 @@ export default function App() {
       });
   }, []);
 
+  const grupoActual = grupos.find((g) => g.id === filtros.grupo);
+  const necesitaPassword = Boolean(grupoActual?.requierePassword);
+  const autenticado = Boolean(filtros.grupo) && (!necesitaPassword || Boolean(passwords[filtros.grupo]));
+
   useEffect(() => {
-    if (!filtros.grupo) return undefined;
+    if (!filtros.grupo || !autenticado) return undefined;
 
     let cancelado = false;
     setCargando(true);
     setError(null);
 
-    Promise.all([obtenerGastos(filtros), obtenerResumen(filtros)])
+    const params = { ...filtros, password: passwords[filtros.grupo] };
+
+    Promise.all([obtenerGastos(params), obtenerResumen(params)])
       .then(([listaGastos, datosResumen]) => {
         if (cancelado) return;
         setGastos(listaGastos);
@@ -60,19 +82,34 @@ export default function App() {
     return () => {
       cancelado = true;
     };
-  }, [filtros]);
+  }, [filtros, autenticado, passwords]);
 
   useEffect(() => {
-    if (!filtros.grupo) return;
-    obtenerGastos({ grupo: filtros.grupo }).then(setGastosTotales).catch(() => {});
-  }, [filtros.grupo]);
+    if (!filtros.grupo || !autenticado) return;
+    obtenerGastos({ grupo: filtros.grupo, password: passwords[filtros.grupo] })
+      .then(setGastosTotales)
+      .catch(() => {});
+  }, [filtros.grupo, autenticado, passwords]);
 
   const personasDisponibles = useMemo(() => {
     const unicas = new Set(gastosTotales.map((g) => g.persona).filter(Boolean));
     return Array.from(unicas);
   }, [gastosTotales]);
 
-  const grupoActual = grupos.find((g) => g.id === filtros.grupo);
+  function manejarSubmitPassword(password) {
+    setVerificandoPassword(true);
+    setPasswordError(null);
+    verificarPasswordGrupo(filtros.grupo, password)
+      .then((ok) => {
+        if (ok) {
+          setPasswords((actual) => ({ ...actual, [filtros.grupo]: password }));
+        } else {
+          setPasswordError('Contraseña incorrecta.');
+        }
+      })
+      .catch(() => setPasswordError('No se pudo verificar la contraseña. Intentá de nuevo.'))
+      .finally(() => setVerificandoPassword(false));
+  }
 
   return (
     <div className="app">
@@ -93,12 +130,22 @@ export default function App() {
         onChange={setFiltros}
         personasDisponibles={personasDisponibles}
         grupos={grupos}
+        bloqueado={!autenticado}
       />
 
-      {error && <p className="error">{error}</p>}
-      {cargando && <p className="cargando">Cargando...</p>}
+      {!autenticado && grupoActual && (
+        <PasswordGate
+          grupoNombre={grupoActual.nombre}
+          error={passwordError}
+          cargando={verificandoPassword}
+          onSubmit={manejarSubmitPassword}
+        />
+      )}
 
-      {!cargando && !error && resumen && (
+      {autenticado && error && <p className="error">{error}</p>}
+      {autenticado && cargando && <p className="cargando">Cargando...</p>}
+
+      {autenticado && !cargando && !error && resumen && (
         <div className="grid">
           <ResumenMes totalMes={resumen.totalMes} totalMesAnterior={resumen.totalMesAnterior} />
           <GraficoCategorias porCategoria={resumen.porCategoria} />

@@ -72,6 +72,23 @@ cp .env.example .env
 
   Un numero de WhatsApp que no este en **ningun** grupo recibe un mensaje pidiendole al administrador que lo agregue, y no se guarda nada.
 
+#### Proteger un grupo con contraseña
+
+Cada grupo puede tener un campo opcional `password`. Si se define, el dashboard le va a pedir esa contraseña antes de mostrar los gastos de ese grupo (asi una familia no puede ver los gastos de otra cambiando el selector). Si un grupo no tiene `password`, queda visible sin pedir nada (compatibilidad con grupos ya configurados). Ejemplo:
+
+```json
+{
+  "fede": {
+    "nombre": "Federico y Cande",
+    "password": "unaClaveCualquiera",
+    "spreadsheetId": "ID_DE_LA_SHEET_1",
+    "personas": { "whatsapp:+5491100000000": "Federico", "whatsapp:+5491100000001": "Cande" }
+  }
+}
+```
+
+Es una proteccion basica (la contraseña viaja y se valida en texto plano contra la variable de entorno) pensada para que una familia no husmee los gastos de otra por curiosidad, no para datos de alta sensibilidad.
+
 #### Agregar un grupo familiar nuevo (ej. la familia de tu hermano)
 
 Como todos comparten el mismo bot y numero de Twilio, no hace falta que el hermano cree su propia cuenta de Twilio ni Railway. Solo hay que:

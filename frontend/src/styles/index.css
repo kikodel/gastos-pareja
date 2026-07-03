@@ -262,6 +262,81 @@ tbody td:last-child {
   font-weight: 500;
 }
 
+/* ---------- Password gate ---------- */
+
+.password-gate {
+  display: flex;
+  justify-content: center;
+  padding: 48px 16px;
+}
+
+.password-gate-card {
+  width: 100%;
+  max-width: 360px;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-border);
+  padding: 28px;
+  text-align: center;
+}
+
+.password-gate-card h2 {
+  font-size: 1.05rem;
+  margin: 0 0 8px;
+}
+
+.password-gate-card p {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin: 0 0 18px;
+}
+
+.password-gate-card input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  font-size: 0.95rem;
+  font-family: inherit;
+  margin-bottom: 12px;
+}
+
+.password-gate-card input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.password-gate-card .error {
+  margin-bottom: 12px;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.password-gate-card button {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--color-primary);
+  color: white;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.password-gate-card button:hover {
+  background: var(--color-primary-dark);
+}
+
+.password-gate-card button:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
 @media (max-width: 800px) {
   .app {
     padding: 20px 16px 48px;

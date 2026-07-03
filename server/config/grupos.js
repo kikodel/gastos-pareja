@@ -1,11 +1,22 @@
 const { env } = require('./env');
 
 function listarGrupos() {
-  return Object.entries(env.grupos).map(([id, grupo]) => ({ id, nombre: grupo.nombre }));
+  return Object.entries(env.grupos).map(([id, grupo]) => ({
+    id,
+    nombre: grupo.nombre,
+    requierePassword: Boolean(grupo.password),
+  }));
 }
 
 function obtenerGrupo(id) {
   return env.grupos[id] || null;
+}
+
+function verificarPassword(id, password) {
+  const grupo = obtenerGrupo(id);
+  if (!grupo) return false;
+  if (!grupo.password) return true;
+  return grupo.password === password;
 }
 
 function resolverGrupoYPersonaPorNumero(fromWhatsapp) {
@@ -22,4 +33,4 @@ function resolverGrupoYPersonaPorNumero(fromWhatsapp) {
   return null;
 }
 
-module.exports = { listarGrupos, obtenerGrupo, resolverGrupoYPersonaPorNumero };
+module.exports = { listarGrupos, obtenerGrupo, verificarPassword, resolverGrupoYPersonaPorNumero };

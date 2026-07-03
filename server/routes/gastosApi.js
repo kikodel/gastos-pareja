@@ -1,12 +1,12 @@
 const express = require('express');
 const { leerGastos } = require('../services/sheetsService');
 const { ORDEN_CATEGORIAS } = require('../config/categorias');
-const { obtenerGrupo } = require('../config/grupos');
+const { obtenerGrupo, verificarPassword } = require('../config/grupos');
 
 const router = express.Router();
 
 function resolverSpreadsheetId(req, res) {
-  const { grupo } = req.query;
+  const { grupo, password } = req.query;
   if (!grupo) {
     res.status(400).json({ error: 'Falta el parametro grupo' });
     return null;
@@ -14,6 +14,10 @@ function resolverSpreadsheetId(req, res) {
   const grupoConfig = obtenerGrupo(grupo);
   if (!grupoConfig) {
     res.status(404).json({ error: `Grupo desconocido: ${grupo}` });
+    return null;
+  }
+  if (!verificarPassword(grupo, password || '')) {
+    res.status(401).json({ error: 'Contrasena incorrecta' });
     return null;
   }
   return grupoConfig.spreadsheetId;
