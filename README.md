@@ -26,7 +26,7 @@ Desde el dashboard (botón **⚙️ Configuración**, arriba a la derecha) cada 
 
 - **Ingreso mensual**: para calcular el ahorro proyectado del mes (ingreso - gastos).
 - **Meta de ahorro mensual**: si el ahorro proyectado cae por debajo de esta meta, se dispara una alerta.
-- **Límites por categoría** (opcional, uno por categoría): si el gasto acumulado del mes en esa categoría supera el límite, se dispara una alerta.
+- **Límites por categoría** (opcional, uno por categoría): se definen como **% del ingreso mensual**, no como monto fijo. El formulario muestra en vivo el equivalente en $ (ej. "10% = $50.000"). Requiere haber cargado el ingreso mensual primero. Si el gasto acumulado del mes en esa categoría supera ese monto, se dispara una alerta que muestra el % y el $ correspondiente.
 
 Esta configuración se guarda en una pestaña nueva llamada **"Config"** dentro de la misma Google Sheet de cada familia (se crea sola la primera vez que se usa, no hay que crearla a mano).
 

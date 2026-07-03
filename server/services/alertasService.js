@@ -10,15 +10,16 @@ function calcularAlertas({ gastosAntes, config, categoria, monto, mesActual }) {
 
   const gastosDelMesAntes = gastosAntes.filter((g) => obtenerMesDeFecha(g.fecha) === mesActual);
 
-  const limite = config.limites ? config.limites[categoria] : null;
-  if (limite) {
+  const porcentaje = config.limites ? config.limites[categoria] : null;
+  if (porcentaje && config.ingresoMensual) {
+    const limite = config.ingresoMensual * (porcentaje / 100);
     const totalCategoriaAntes = gastosDelMesAntes
       .filter((g) => g.categoria === categoria)
       .reduce((sum, g) => sum + g.monto, 0);
     const totalCategoriaDespues = totalCategoriaAntes + monto;
     if (totalCategoriaAntes < limite && totalCategoriaDespues >= limite) {
       alertas.push(
-        `🚨 Superaron el límite de "${categoria}" de este mes ($${formatearMonto(limite)}). Llevan gastado $${formatearMonto(totalCategoriaDespues)}.`
+        `🚨 Superaron el límite de "${categoria}" de este mes: ${porcentaje}% del ingreso ($${formatearMonto(limite)}). Llevan gastado $${formatearMonto(totalCategoriaDespues)}.`
       );
     }
   }

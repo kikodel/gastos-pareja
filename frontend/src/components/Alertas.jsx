@@ -6,9 +6,15 @@ export default function Alertas({ resumen, config }) {
   if (!resumen || !config) return null;
 
   const alertasCategoria = (resumen.porCategoria || [])
-    .filter((c) => config.limites?.[c.categoria] && c.total >= config.limites[c.categoria])
+    .filter((c) => config.limites?.[c.categoria] && config.ingresoMensual)
+    .map((c) => {
+      const porcentaje = config.limites[c.categoria];
+      const limite = config.ingresoMensual * (porcentaje / 100);
+      return { categoria: c.categoria, total: c.total, porcentaje, limite };
+    })
+    .filter((c) => c.total >= c.limite)
     .map((c) => ({
-      texto: `${c.categoria}: gastaron ${formatearMoneda(c.total)} de ${formatearMoneda(config.limites[c.categoria])}`,
+      texto: `${c.categoria}: gastaron ${formatearMoneda(c.total)} de ${formatearMoneda(c.limite)} (${c.porcentaje}% del ingreso)`,
     }));
 
   const alertasAhorro = [];

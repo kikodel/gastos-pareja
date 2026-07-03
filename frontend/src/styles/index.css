@@ -452,6 +452,37 @@ tbody td:last-child {
   box-shadow: 0 0 0 3px var(--color-primary-soft);
 }
 
+.config-familia input:disabled {
+  background: var(--color-bg);
+  cursor: not-allowed;
+}
+
+.config-limite-input {
+  position: relative;
+  display: flex;
+}
+
+.config-limite-input input {
+  width: 100%;
+  padding-right: 28px;
+}
+
+.config-limite-sufijo {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-faint);
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+
+.config-limite-equivalente {
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
 .config-familia button[type='submit'] {
   margin-top: 22px;
   padding: 10px 20px;

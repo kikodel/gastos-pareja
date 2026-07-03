@@ -12,6 +12,10 @@ function aFormulario(config) {
   };
 }
 
+function formatearMoneda(valor) {
+  return `$${valor.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`;
+}
+
 export default function ConfiguracionFamilia({ config, onGuardar, onCerrar }) {
   const [form, setForm] = useState(() => aFormulario(config));
   const [guardando, setGuardando] = useState(false);
@@ -43,6 +47,9 @@ export default function ConfiguracionFamilia({ config, onGuardar, onCerrar }) {
       setGuardando(false);
     }
   }
+
+  const ingresoNumerico = parseFloat(form.ingresoMensual);
+  const hayIngreso = !Number.isNaN(ingresoNumerico) && ingresoNumerico > 0;
 
   return (
     <div className="card config-familia">
@@ -82,23 +89,39 @@ export default function ConfiguracionFamilia({ config, onGuardar, onCerrar }) {
 
         <h3>Límites por categoría (opcional)</h3>
         <p className="config-familia-ayuda">
-          Dejá en blanco las categorías sin límite. Se avisa por WhatsApp y en el dashboard cuando se supera.
+          {hayIngreso
+            ? 'Definí cada límite como % del ingreso mensual. Dejá en blanco las categorías sin límite.'
+            : 'Cargá el ingreso mensual arriba para poder definir límites como % del ingreso.'}
         </p>
 
         <div className="config-familia-grid">
-          {CATEGORIAS.map((cat) => (
-            <label key={cat}>
-              {cat}
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="Sin límite"
-                value={form.limites[cat]}
-                onChange={(e) => actualizarLimite(cat, e.target.value)}
-              />
-            </label>
-          ))}
+          {CATEGORIAS.map((cat) => {
+            const porcentaje = parseFloat(form.limites[cat]);
+            const tieneValor = !Number.isNaN(porcentaje) && porcentaje > 0;
+            return (
+              <label key={cat}>
+                {cat}
+                <div className="config-limite-input">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="1"
+                    placeholder="Sin límite"
+                    disabled={!hayIngreso}
+                    value={form.limites[cat]}
+                    onChange={(e) => actualizarLimite(cat, e.target.value)}
+                  />
+                  <span className="config-limite-sufijo">%</span>
+                </div>
+                {hayIngreso && tieneValor && (
+                  <span className="config-limite-equivalente">
+                    = {formatearMoneda(ingresoNumerico * (porcentaje / 100))}
+                  </span>
+                )}
+              </label>
+            );
+          })}
         </div>
 
         {mensaje && <p className={mensaje.tipo === 'error' ? 'error' : 'exito'}>{mensaje.texto}</p>}
