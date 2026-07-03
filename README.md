@@ -20,6 +20,20 @@ El bot responde confirmando el monto, la categoria detectada y quien lo registro
 
 Supermercado, Comida afuera, Transporte, Servicios/Cuentas, Salud, Ocio, Ropa, Hogar, Otros (fallback si ninguna palabra clave matchea). Las palabras clave de cada categoria estan en `server/config/categorias.js`.
 
+## Ingreso mensual, meta de ahorro y alertas
+
+Desde el dashboard (botón **⚙️ Configuración**, arriba a la derecha) cada familia puede cargar:
+
+- **Ingreso mensual**: para calcular el ahorro proyectado del mes (ingreso - gastos).
+- **Meta de ahorro mensual**: si el ahorro proyectado cae por debajo de esta meta, se dispara una alerta.
+- **Límites por categoría** (opcional, uno por categoría): si el gasto acumulado del mes en esa categoría supera el límite, se dispara una alerta.
+
+Esta configuración se guarda en una pestaña nueva llamada **"Config"** dentro de la misma Google Sheet de cada familia (se crea sola la primera vez que se usa, no hay que crearla a mano).
+
+Las alertas se muestran de dos formas:
+1. **En el dashboard**: un banner rojo arriba de los gráficos mientras la alerta siga vigente.
+2. **Por WhatsApp**: el bot manda un mensaje extra (además de la confirmación del gasto) justo en el momento en que un gasto hace que se cruce el límite o la meta de ahorro. Solo avisa una vez por cruce (no repite el aviso en cada gasto siguiente si ya estaban por encima).
+
 ## Setup
 
 ### 1. Twilio (WhatsApp Sandbox)

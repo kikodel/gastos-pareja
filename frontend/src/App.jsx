@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { obtenerGastos, obtenerResumen, obtenerGrupos, verificarPasswordGrupo } from './api/gastosClient';
+import {
+  obtenerGastos,
+  obtenerResumen,
+  obtenerGrupos,
+  verificarPasswordGrupo,
+  obtenerConfig,
+  guardarConfigGrupo,
+} from './api/gastosClient';
 import Filtros from './components/Filtros';
 import PasswordGate from './components/PasswordGate';
 import ResumenMes from './components/ResumenMes';
@@ -7,6 +14,8 @@ import GraficoCategorias from './components/GraficoCategorias';
 import EvolucionMensual from './components/EvolucionMensual';
 import ComparacionPersonas from './components/ComparacionPersonas';
 import TablaGastos from './components/TablaGastos';
+import Alertas from './components/Alertas';
+import ConfiguracionFamilia from './components/ConfiguracionFamilia';
 
 function mesActual() {
   const hoy = new Date();
@@ -27,6 +36,8 @@ export default function App() {
   const [gastos, setGastos] = useState([]);
   const [resumen, setResumen] = useState(null);
   const [gastosTotales, setGastosTotales] = useState([]);
+  const [config, setConfig] = useState(null);
+  const [mostrarConfig, setMostrarConfig] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [passwords, setPasswords] = useState(cargarPasswordsGuardadas);
@@ -91,6 +102,16 @@ export default function App() {
       .catch(() => {});
   }, [filtros.grupo, autenticado, passwords]);
 
+  useEffect(() => {
+    if (!filtros.grupo || !autenticado) {
+      setConfig(null);
+      return;
+    }
+    obtenerConfig(filtros.grupo, passwords[filtros.grupo])
+      .then(setConfig)
+      .catch((err) => console.error('No se pudo cargar la configuración', err));
+  }, [filtros.grupo, autenticado, passwords]);
+
   const personasDisponibles = useMemo(() => {
     const unicas = new Set(gastosTotales.map((g) => g.persona).filter(Boolean));
     return Array.from(unicas);
@@ -111,6 +132,11 @@ export default function App() {
       .finally(() => setVerificandoPassword(false));
   }
 
+  async function manejarGuardarConfig(nuevoConfig) {
+    const guardado = await guardarConfigGrupo(filtros.grupo, passwords[filtros.grupo], nuevoConfig);
+    setConfig(guardado);
+  }
+
   return (
     <div className="app">
       <header className="app-header">
@@ -123,6 +149,11 @@ export default function App() {
             </p>
           </div>
         </div>
+        {autenticado && (
+          <button type="button" className="config-toggle" onClick={() => setMostrarConfig((v) => !v)}>
+            {mostrarConfig ? 'Cerrar configuración' : '⚙️ Configuración'}
+          </button>
+        )}
       </header>
 
       <Filtros
@@ -142,17 +173,28 @@ export default function App() {
         />
       )}
 
+      {autenticado && mostrarConfig && (
+        <ConfiguracionFamilia
+          config={config}
+          onGuardar={manejarGuardarConfig}
+          onCerrar={() => setMostrarConfig(false)}
+        />
+      )}
+
       {autenticado && error && <p className="error">{error}</p>}
       {autenticado && cargando && <p className="cargando">Cargando...</p>}
 
       {autenticado && !cargando && !error && resumen && (
-        <div className="grid">
-          <ResumenMes totalMes={resumen.totalMes} totalMesAnterior={resumen.totalMesAnterior} />
-          <GraficoCategorias porCategoria={resumen.porCategoria} />
-          <EvolucionMensual evolucionMensual={resumen.evolucionMensual} />
-          <ComparacionPersonas porPersona={resumen.porPersona} />
-          <TablaGastos gastos={gastos} />
-        </div>
+        <>
+          <Alertas resumen={resumen} config={config} />
+          <div className="grid">
+            <ResumenMes totalMes={resumen.totalMes} totalMesAnterior={resumen.totalMesAnterior} />
+            <GraficoCategorias porCategoria={resumen.porCategoria} />
+            <EvolucionMensual evolucionMensual={resumen.evolucionMensual} />
+            <ComparacionPersonas porPersona={resumen.porPersona} />
+            <TablaGastos gastos={gastos} />
+          </div>
+        </>
       )}
     </div>
   );

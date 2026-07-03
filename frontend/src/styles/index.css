@@ -41,12 +41,36 @@ body {
 
 .app-header {
   margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .app-header-brand {
   display: flex;
   align-items: center;
   gap: 14px;
+}
+
+.config-toggle {
+  padding: 9px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.config-toggle:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .app-header-badge {
@@ -335,6 +359,125 @@ tbody td:last-child {
 .password-gate-card button:disabled {
   opacity: 0.7;
   cursor: default;
+}
+
+/* ---------- Alertas ---------- */
+
+.alertas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.alerta-item {
+  background: #fff4ed;
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  color: #9a3412;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* ---------- Configuracion familiar ---------- */
+
+.config-familia {
+  margin-bottom: 24px;
+}
+
+.config-familia-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.config-familia-header h2 {
+  margin: 0;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.config-familia h3 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-faint);
+  margin: 20px 0 4px;
+}
+
+.config-familia-ayuda {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin: 0 0 14px;
+}
+
+.config-familia-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.config-familia label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  gap: 6px;
+}
+
+.config-familia input {
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  font-size: 0.92rem;
+  font-family: inherit;
+  color: var(--color-text);
+}
+
+.config-familia input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.config-familia button[type='submit'] {
+  margin-top: 22px;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--color-primary);
+  color: white;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.config-familia button[type='submit']:hover {
+  background: var(--color-primary-dark);
+}
+
+.config-familia button[type='submit']:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.exito {
+  color: var(--color-success);
+  font-weight: 600;
+  font-size: 0.88rem;
 }
 
 @media (max-width: 800px) {

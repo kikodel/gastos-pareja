@@ -6,6 +6,11 @@ const RANGE_APPEND = `${SHEET_NAME}!A:G`;
 const RANGE_READ = `${SHEET_NAME}!A2:G`;
 const CACHE_TTL_MS = 45 * 1000;
 
+const CONFIG_SHEET_NAME = 'Config';
+const CONFIG_RANGE_READ = `${CONFIG_SHEET_NAME}!A2:B1000`;
+const CONFIG_RANGE_FULL = `${CONFIG_SHEET_NAME}!A1:B1000`;
+const CONFIG_LIMITE_PREFIJO = 'Limite_';
+
 const cachePorSheet = new Map();
 
 function getAuth() {
@@ -67,4 +72,86 @@ async function leerGastos(spreadsheetId) {
   return datos;
 }
 
-module.exports = { agregarGasto, leerGastos };
+async function asegurarHojaConfig(sheets, spreadsheetId) {
+  const metadata = await sheets.spreadsheets.get({
+    spreadsheetId,
+    fields: 'sheets.properties.title',
+  });
+  const existe = (metadata.data.sheets || []).some(
+    (hoja) => hoja.properties.title === CONFIG_SHEET_NAME
+  );
+
+  if (!existe) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: {
+        requests: [{ addSheet: { properties: { title: CONFIG_SHEET_NAME } } }],
+      },
+    });
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${CONFIG_SHEET_NAME}!A1:B1`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [['Clave', 'Valor']] },
+    });
+  }
+}
+
+function filasAConfig(filas) {
+  const config = { ingresoMensual: null, metaAhorro: null, limites: {} };
+  filas.forEach((fila) => {
+    const clave = (fila[0] || '').trim();
+    const valor = parseFloat(fila[1]);
+    if (Number.isNaN(valor)) return;
+
+    if (clave === 'IngresoMensual') {
+      config.ingresoMensual = valor;
+    } else if (clave === 'MetaAhorro') {
+      config.metaAhorro = valor;
+    } else if (clave.startsWith(CONFIG_LIMITE_PREFIJO)) {
+      const categoria = clave.slice(CONFIG_LIMITE_PREFIJO.length);
+      config.limites[categoria] = valor;
+    }
+  });
+  return config;
+}
+
+async function leerConfig(spreadsheetId) {
+  const sheets = await getSheetsClient();
+  await asegurarHojaConfig(sheets, spreadsheetId);
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: CONFIG_RANGE_READ,
+  });
+  return filasAConfig(res.data.values || []);
+}
+
+async function guardarConfig(spreadsheetId, { ingresoMensual, metaAhorro, limites }) {
+  const sheets = await getSheetsClient();
+  await asegurarHojaConfig(sheets, spreadsheetId);
+
+  const filas = [];
+  if (ingresoMensual !== null && ingresoMensual !== undefined && !Number.isNaN(ingresoMensual)) {
+    filas.push(['IngresoMensual', ingresoMensual]);
+  }
+  if (metaAhorro !== null && metaAhorro !== undefined && !Number.isNaN(metaAhorro)) {
+    filas.push(['MetaAhorro', metaAhorro]);
+  }
+  Object.entries(limites || {}).forEach(([categoria, valor]) => {
+    if (valor !== null && valor !== undefined && !Number.isNaN(valor) && valor > 0) {
+      filas.push([`${CONFIG_LIMITE_PREFIJO}${categoria}`, valor]);
+    }
+  });
+
+  await sheets.spreadsheets.values.clear({ spreadsheetId, range: CONFIG_RANGE_FULL });
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: CONFIG_RANGE_FULL,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: { values: [['Clave', 'Valor'], ...filas] },
+  });
+
+  return filasAConfig(filas);
+}
+
+module.exports = { agregarGasto, leerGastos, leerConfig, guardarConfig };

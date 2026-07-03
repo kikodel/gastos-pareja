@@ -4,11 +4,14 @@ function formatearMonto(monto) {
   return monto.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
-function crearRespuestaConfirmacion({ monto, categoria, descripcion, persona }) {
+function crearRespuestaConfirmacion({ monto, categoria, descripcion, persona, alertas = [] }) {
   const twimlResponse = new MessagingResponse();
   twimlResponse.message(
     `✅ Gasto registrado: $${formatearMonto(monto)} - ${categoria} (${descripcion}) - ${persona}`
   );
+  alertas.forEach((texto) => {
+    twimlResponse.message(texto);
+  });
   return twimlResponse.toString();
 }
 
@@ -28,4 +31,9 @@ function crearRespuestaNumeroNoRegistrado() {
   return twimlResponse.toString();
 }
 
-module.exports = { crearRespuestaConfirmacion, crearRespuestaError, crearRespuestaNumeroNoRegistrado };
+module.exports = {
+  formatearMonto,
+  crearRespuestaConfirmacion,
+  crearRespuestaError,
+  crearRespuestaNumeroNoRegistrado,
+};

@@ -1,12 +1,13 @@
 const express = require('express');
 const { parsearMensaje } = require('../services/parserService');
 const { categorizar } = require('../services/categorizerService');
-const { agregarGasto } = require('../services/sheetsService');
+const { agregarGasto, leerGastos, leerConfig } = require('../services/sheetsService');
 const {
   crearRespuestaConfirmacion,
   crearRespuestaError,
   crearRespuestaNumeroNoRegistrado,
 } = require('../services/twilioService');
+const { calcularAlertas } = require('../services/alertasService');
 const { resolverGrupoYPersonaPorNumero } = require('../config/grupos');
 const { validateTwilioSignature } = require('../utils/validateTwilioSignature');
 
@@ -49,6 +50,18 @@ router.post('/', validateTwilioSignature, async (req, res) => {
   const categoria = categorizar(descripcion);
   const { persona, spreadsheetId } = resuelto;
   const fecha = formatearFecha(new Date());
+  const mesActual = fecha.slice(0, 7);
+
+  let alertas = [];
+  try {
+    const [gastosAntes, config] = await Promise.all([
+      leerGastos(spreadsheetId),
+      leerConfig(spreadsheetId),
+    ]);
+    alertas = calcularAlertas({ gastosAntes, config, categoria, monto, mesActual });
+  } catch (err) {
+    console.error('Error al calcular alertas (se ignora, no bloquea el registro):', err);
+  }
 
   try {
     await agregarGasto(spreadsheetId, {
@@ -67,7 +80,7 @@ router.post('/', validateTwilioSignature, async (req, res) => {
   }
 
   res.type('text/xml').send(
-    crearRespuestaConfirmacion({ monto, categoria, descripcion, persona })
+    crearRespuestaConfirmacion({ monto, categoria, descripcion, persona, alertas })
   );
 });
 

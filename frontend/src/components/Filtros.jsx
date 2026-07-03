@@ -1,14 +1,4 @@
-const CATEGORIAS = [
-  'Supermercado',
-  'Comida afuera',
-  'Transporte',
-  'Servicios/Cuentas',
-  'Salud',
-  'Ocio',
-  'Ropa',
-  'Hogar',
-  'Otros',
-];
+import { CATEGORIAS } from '../constants';
 
 function generarMesesDisponibles(cantidad = 12) {
   const meses = [];
