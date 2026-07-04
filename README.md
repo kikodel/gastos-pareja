@@ -20,6 +20,10 @@ El bot responde confirmando el monto, la categoria detectada y quien lo registro
 
 Supermercado, Comida afuera, Transporte, Servicios/Cuentas, Salud, Ocio, Ropa, Hogar, Otros (fallback si ninguna palabra clave matchea). Las palabras clave de cada categoria estan en `server/config/categorias.js`.
 
+## Eliminar un gasto
+
+En la tabla "Ultimos gastos" del dashboard, cada fila tiene un ícono 🗑️ al final. Pide confirmación antes de borrar y elimina la fila directamente de la Google Sheet de esa familia (no se puede deshacer).
+
 ## Ingreso mensual, meta de ahorro y alertas
 
 Desde el dashboard (botón **⚙️ Configuración**, arriba a la derecha) cada familia puede cargar:

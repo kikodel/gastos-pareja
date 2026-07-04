@@ -49,8 +49,10 @@ async function leerGastosSinCache(spreadsheetId) {
   });
   const filas = res.data.values || [];
   return filas
-    .filter((fila) => fila.length > 0 && fila[0])
-    .map((fila) => ({
+    .map((fila, indice) => ({ fila, numeroFila: indice + 2 }))
+    .filter(({ fila }) => fila.length > 0 && fila[0])
+    .map(({ fila, numeroFila }) => ({
+      fila: numeroFila,
       fecha: fila[0] || '',
       persona: fila[1] || '',
       monto: parseFloat(fila[2]) || 0,
@@ -59,6 +61,43 @@ async function leerGastosSinCache(spreadsheetId) {
       mensajeOriginal: fila[5] || '',
       moneda: fila[6] || 'ARS',
     }));
+}
+
+async function obtenerSheetIdPorTitulo(sheets, spreadsheetId, titulo) {
+  const metadata = await sheets.spreadsheets.get({
+    spreadsheetId,
+    fields: 'sheets.properties',
+  });
+  const hoja = (metadata.data.sheets || []).find((h) => h.properties.title === titulo);
+  return hoja ? hoja.properties.sheetId : null;
+}
+
+async function eliminarGasto(spreadsheetId, numeroFila) {
+  const sheets = await getSheetsClient();
+  const sheetId = await obtenerSheetIdPorTitulo(sheets, spreadsheetId, SHEET_NAME);
+  if (sheetId === null) {
+    throw new Error(`No se encontro la hoja "${SHEET_NAME}"`);
+  }
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [
+        {
+          deleteDimension: {
+            range: {
+              sheetId,
+              dimension: 'ROWS',
+              startIndex: numeroFila - 1,
+              endIndex: numeroFila,
+            },
+          },
+        },
+      ],
+    },
+  });
+
+  cachePorSheet.delete(spreadsheetId);
 }
 
 async function leerGastos(spreadsheetId) {
@@ -154,4 +193,4 @@ async function guardarConfig(spreadsheetId, { ingresoMensual, metaAhorro, limite
   return filasAConfig(filas);
 }
 
-module.exports = { agregarGasto, leerGastos, leerConfig, guardarConfig };
+module.exports = { agregarGasto, leerGastos, eliminarGasto, leerConfig, guardarConfig };

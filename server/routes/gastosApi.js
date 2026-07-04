@@ -1,5 +1,5 @@
 const express = require('express');
-const { leerGastos } = require('../services/sheetsService');
+const { leerGastos, eliminarGasto } = require('../services/sheetsService');
 const { ORDEN_CATEGORIAS } = require('../config/categorias');
 const { obtenerGrupo, verificarPassword } = require('../config/grupos');
 
@@ -102,6 +102,25 @@ router.get('/resumen', async (req, res) => {
   } catch (err) {
     console.error('Error al calcular resumen:', err);
     res.status(500).json({ error: 'No se pudo calcular el resumen' });
+  }
+});
+
+router.delete('/:fila', async (req, res) => {
+  const spreadsheetId = resolverSpreadsheetId(req, res);
+  if (!spreadsheetId) return;
+
+  const numeroFila = parseInt(req.params.fila, 10);
+  if (Number.isNaN(numeroFila) || numeroFila < 2) {
+    res.status(400).json({ error: 'Fila invalida' });
+    return;
+  }
+
+  try {
+    await eliminarGasto(spreadsheetId, numeroFila);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Error al eliminar gasto:', err);
+    res.status(500).json({ error: 'No se pudo eliminar el gasto' });
   }
 });
 

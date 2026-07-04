@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   obtenerGastos,
   obtenerResumen,
@@ -6,6 +6,7 @@ import {
   verificarPasswordGrupo,
   obtenerConfig,
   guardarConfigGrupo,
+  eliminarGasto,
 } from './api/gastosClient';
 import Filtros from './components/Filtros';
 import PasswordGate from './components/PasswordGate';
@@ -66,6 +67,19 @@ export default function App() {
   const necesitaPassword = Boolean(grupoActual?.requierePassword);
   const autenticado = Boolean(filtros.grupo) && (!necesitaPassword || Boolean(passwords[filtros.grupo]));
 
+  const cargarGastosYResumen = useCallback(
+    (paramsExtra = {}) => {
+      const params = { ...filtros, password: passwords[filtros.grupo], ...paramsExtra };
+      return Promise.all([obtenerGastos(params), obtenerResumen(params)]).then(
+        ([listaGastos, datosResumen]) => {
+          setGastos(listaGastos);
+          setResumen(datosResumen);
+        }
+      );
+    },
+    [filtros, passwords]
+  );
+
   useEffect(() => {
     if (!filtros.grupo || !autenticado) return undefined;
 
@@ -73,14 +87,7 @@ export default function App() {
     setCargando(true);
     setError(null);
 
-    const params = { ...filtros, password: passwords[filtros.grupo] };
-
-    Promise.all([obtenerGastos(params), obtenerResumen(params)])
-      .then(([listaGastos, datosResumen]) => {
-        if (cancelado) return;
-        setGastos(listaGastos);
-        setResumen(datosResumen);
-      })
+    cargarGastosYResumen()
       .catch((err) => {
         if (cancelado) return;
         console.error(err);
@@ -93,6 +100,7 @@ export default function App() {
     return () => {
       cancelado = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtros, autenticado, passwords]);
 
   useEffect(() => {
@@ -135,6 +143,16 @@ export default function App() {
   async function manejarGuardarConfig(nuevoConfig) {
     const guardado = await guardarConfigGrupo(filtros.grupo, passwords[filtros.grupo], nuevoConfig);
     setConfig(guardado);
+  }
+
+  async function manejarEliminarGasto(fila) {
+    try {
+      await eliminarGasto(filtros.grupo, passwords[filtros.grupo], fila);
+      await cargarGastosYResumen();
+    } catch (err) {
+      console.error(err);
+      setError('No se pudo eliminar el gasto. Intentá de nuevo.');
+    }
   }
 
   return (
@@ -192,7 +210,7 @@ export default function App() {
             <GraficoCategorias porCategoria={resumen.porCategoria} />
             <EvolucionMensual evolucionMensual={resumen.evolucionMensual} />
             <ComparacionPersonas porPersona={resumen.porPersona} />
-            <TablaGastos gastos={gastos} />
+            <TablaGastos gastos={gastos} onEliminar={manejarEliminarGasto} />
           </div>
         </>
       )}

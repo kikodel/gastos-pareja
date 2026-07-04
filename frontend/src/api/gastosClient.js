@@ -29,3 +29,8 @@ export async function guardarConfigGrupo(grupo, password, config) {
   const { data } = await axios.put('/api/config', { password, ...config }, { params: { grupo } });
   return data;
 }
+
+export async function eliminarGasto(grupo, password, fila) {
+  const { data } = await axios.delete(`/api/gastos/${fila}`, { params: { grupo, password } });
+  return data;
+}

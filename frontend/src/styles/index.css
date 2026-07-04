@@ -259,9 +259,36 @@ tbody tr:hover {
   background: var(--color-primary-soft);
 }
 
-tbody td:last-child {
+tbody td:nth-last-child(2) {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+tbody td:last-child {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.eliminar-gasto {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 4px 6px;
+  border-radius: 6px;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.eliminar-gasto:hover {
+  opacity: 1;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.eliminar-gasto:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 /* ---------- Estados ---------- */
