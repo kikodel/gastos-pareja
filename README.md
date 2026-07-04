@@ -22,6 +22,17 @@ Supermercado, Comida afuera, Transporte, Servicios/Cuentas, Salud, Ocio, Ropa, H
 
 **Categorizacion con IA**: si ninguna palabra clave matchea, en vez de caer directo en "Otros" el bot le pregunta a Claude (Anthropic) que categoria le parece mas apropiada segun la descripcion del gasto. Esto requiere la variable de entorno `ANTHROPIC_API_KEY` (ver seccion de variables de entorno) — si no esta configurada, o si Claude no responde a tiempo, cae en "Otros" como antes, sin romper nada. Las palabras clave siguen siendo el primer filtro (mas rapido y sin costo); Claude solo se usa cuando ninguna keyword matcheo.
 
+## Preguntas por WhatsApp
+
+Ademas de registrar gastos, le podés preguntar cosas al bot en lenguaje natural, por ejemplo:
+
+- `¿Cuánto llevo gastado este mes?`
+- `¿Cuánto gastamos en Supermercado?`
+- `¿Cómo voy con el ahorro?`
+- `¿Cuál fue mi último gasto?`
+
+El bot detecta que es una pregunta (si el mensaje tiene "?" o arranca con una palabra interrogativa como "cuanto", "como", "que", etc. — si no, lo trata como intento de gasto) y le pasa a Claude los gastos de los ultimos 3 meses de esa familia junto con su configuracion (ingreso, meta de ahorro, limites). Los totales y sumas los calcula el codigo (no la IA), para evitar errores de suma; Claude solo redacta la respuesta y contesta preguntas puntuales (ultimo gasto, gastos de una fecha, etc). Requiere `ANTHROPIC_API_KEY` configurada — si no esta disponible, responde que la funcion no esta disponible.
+
 ## Eliminar un gasto
 
 En la tabla "Ultimos gastos" del dashboard, cada fila tiene un ícono 🗑️ al final. Pide confirmación antes de borrar y elimina la fila directamente de la Google Sheet de esa familia (no se puede deshacer).

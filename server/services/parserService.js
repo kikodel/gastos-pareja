@@ -1,5 +1,10 @@
 const STOPWORDS = ['gaste', 'gasté', 'pague', 'pagué', 'compre', 'compré', 'gasto', 'pago', 'en', 'de', 'por', 'del', 'al'];
 
+const PALABRAS_PREGUNTA = [
+  'cuanto', 'cuánto', 'cuanta', 'cuánta', 'cuantos', 'cuántos', 'cuantas', 'cuántas',
+  'como', 'cómo', 'que', 'qué', 'cual', 'cuál', 'cuales', 'cuáles', 'resumen', 'total',
+];
+
 const REGEX_MONTO = /\$?\s*([0-9][0-9.,]*)/;
 
 function normalizarMonto(token) {
@@ -50,4 +55,12 @@ function parsearMensaje(body) {
   return { monto, descripcion, original };
 }
 
-module.exports = { parsearMensaje };
+function esPregunta(texto) {
+  const limpio = (texto || '').trim().toLowerCase();
+  if (!limpio) return false;
+  if (limpio.includes('?')) return true;
+  const primeraPalabra = limpio.split(/\s+/)[0];
+  return PALABRAS_PREGUNTA.includes(primeraPalabra);
+}
+
+module.exports = { parsearMensaje, esPregunta };

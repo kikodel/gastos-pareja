@@ -1,13 +1,15 @@
 const express = require('express');
-const { parsearMensaje } = require('../services/parserService');
+const { parsearMensaje, esPregunta } = require('../services/parserService');
 const { categorizar } = require('../services/categorizerService');
 const { agregarGasto, leerGastos, leerConfig } = require('../services/sheetsService');
 const {
   crearRespuestaConfirmacion,
   crearRespuestaError,
   crearRespuestaNumeroNoRegistrado,
+  crearRespuestaTexto,
 } = require('../services/twilioService');
 const { calcularAlertas } = require('../services/alertasService');
+const { responderPregunta } = require('../services/preguntasService');
 const { resolverGrupoYPersonaPorNumero } = require('../config/grupos');
 const { validateTwilioSignature } = require('../utils/validateTwilioSignature');
 
@@ -40,17 +42,29 @@ router.post('/', validateTwilioSignature, async (req, res) => {
     return;
   }
 
+  const { persona, spreadsheetId } = resuelto;
   const { monto, descripcion, original } = parsearMensaje(Body);
+  const fecha = formatearFecha(new Date());
+  const mesActual = fecha.slice(0, 7);
 
   if (monto === null) {
+    if (esPregunta(Body)) {
+      try {
+        const [gastos, config] = await Promise.all([leerGastos(spreadsheetId), leerConfig(spreadsheetId)]);
+        const respuesta = await responderPregunta({ pregunta: Body, gastos, config, persona, mesActual });
+        res.type('text/xml').send(crearRespuestaTexto(respuesta));
+      } catch (err) {
+        console.error('Error al responder pregunta:', err);
+        res.type('text/xml').send(crearRespuestaTexto('No pude responder tu pregunta ahora, intentá de nuevo en un rato.'));
+      }
+      return;
+    }
+
     res.type('text/xml').send(crearRespuestaError());
     return;
   }
 
   const categoria = await categorizar(descripcion);
-  const { persona, spreadsheetId } = resuelto;
-  const fecha = formatearFecha(new Date());
-  const mesActual = fecha.slice(0, 7);
 
   let alertas = [];
   try {

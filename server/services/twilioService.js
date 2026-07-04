@@ -31,9 +31,16 @@ function crearRespuestaNumeroNoRegistrado() {
   return twimlResponse.toString();
 }
 
+function crearRespuestaTexto(texto) {
+  const twimlResponse = new MessagingResponse();
+  twimlResponse.message(texto);
+  return twimlResponse.toString();
+}
+
 module.exports = {
   formatearMonto,
   crearRespuestaConfirmacion,
   crearRespuestaError,
   crearRespuestaNumeroNoRegistrado,
+  crearRespuestaTexto,
 };
