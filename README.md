@@ -18,7 +18,7 @@ El bot responde confirmando el monto, la categoria detectada y quien lo registro
 
 ## Categorias
 
-Supermercado, Comida afuera, Transporte, Servicios/Cuentas, Salud, Ocio, Ropa, Hogar, Otros (fallback si ninguna palabra clave matchea). Las palabras clave de cada categoria estan en `server/config/categorias.js`.
+Supermercado, Comida afuera, Transporte, Servicios/Cuentas, Salud, Ocio, Ropa, Hogar, Mascotas, Otros (fallback si ninguna palabra clave matchea). Las palabras clave de cada categoria estan en `server/config/categorias.js`. La comparacion ignora espacios, guiones y tildes, asi que "pedidos ya" y "pedidosya" matchean igual. La categorizacion se calcula una sola vez, al momento de guardar el gasto — si cambias las palabras clave despues, no re-categoriza los gastos ya guardados (hay que borrarlos con el boton 🗑️ y volver a cargarlos, o editar la columna Categoria a mano en la Sheet).
 
 ## Eliminar un gasto
 

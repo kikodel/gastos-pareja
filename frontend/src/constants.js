@@ -7,5 +7,6 @@ export const CATEGORIAS = [
   'Ocio',
   'Ropa',
   'Hogar',
+  'Mascotas',
   'Otros',
 ];

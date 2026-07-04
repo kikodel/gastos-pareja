@@ -4,11 +4,15 @@ function quitarTildes(texto) {
   return texto.normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
 
+function normalizarParaComparar(texto) {
+  return quitarTildes((texto || '').toLowerCase()).replace(/[\s-]+/g, '');
+}
+
 function categorizar(descripcion) {
-  const texto = quitarTildes((descripcion || '').toLowerCase());
+  const texto = normalizarParaComparar(descripcion);
   for (const categoria of ORDEN_CATEGORIAS) {
     const keywords = CATEGORIAS[categoria];
-    if (keywords.some((kw) => texto.includes(kw))) {
+    if (keywords.some((kw) => texto.includes(normalizarParaComparar(kw)))) {
       return categoria;
     }
   }
