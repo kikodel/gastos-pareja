@@ -47,7 +47,7 @@ router.post('/', validateTwilioSignature, async (req, res) => {
     return;
   }
 
-  const categoria = categorizar(descripcion);
+  const categoria = await categorizar(descripcion);
   const { persona, spreadsheetId } = resuelto;
   const fecha = formatearFecha(new Date());
   const mesActual = fecha.slice(0, 7);

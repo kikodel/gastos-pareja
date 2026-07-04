@@ -20,6 +20,8 @@ El bot responde confirmando el monto, la categoria detectada y quien lo registro
 
 Supermercado, Comida afuera, Transporte, Servicios/Cuentas, Salud, Ocio, Ropa, Hogar, Mascotas, Otros (fallback si ninguna palabra clave matchea). Las palabras clave de cada categoria estan en `server/config/categorias.js`. La comparacion ignora espacios, guiones y tildes, asi que "pedidos ya" y "pedidosya" matchean igual. La categorizacion se calcula una sola vez, al momento de guardar el gasto — si cambias las palabras clave despues, no re-categoriza los gastos ya guardados (hay que borrarlos con el boton 🗑️ y volver a cargarlos, o editar la columna Categoria a mano en la Sheet).
 
+**Categorizacion con IA**: si ninguna palabra clave matchea, en vez de caer directo en "Otros" el bot le pregunta a Claude (Anthropic) que categoria le parece mas apropiada segun la descripcion del gasto. Esto requiere la variable de entorno `ANTHROPIC_API_KEY` (ver seccion de variables de entorno) — si no esta configurada, o si Claude no responde a tiempo, cae en "Otros" como antes, sin romper nada. Las palabras clave siguen siendo el primer filtro (mas rapido y sin costo); Claude solo se usa cuando ninguna keyword matcheo.
+
 ## Eliminar un gasto
 
 En la tabla "Ultimos gastos" del dashboard, cada fila tiene un ícono 🗑️ al final. Pide confirmación antes de borrar y elimina la fila directamente de la Google Sheet de esa familia (no se puede deshacer).
@@ -71,6 +73,7 @@ cp .env.example .env
 
 - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_NUMBER`: de Twilio.
 - `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`: del JSON del service account (campos `client_email` y `private_key`), compartido entre todos los grupos.
+- `ANTHROPIC_API_KEY` (opcional): key de Claude/Anthropic, se usa solo para categorizar gastos que no matchean ninguna palabra clave. Si se deja vacia, esos gastos caen en "Otros" como antes.
 - `GRUPOS_JSON`: un JSON con un objeto por grupo familiar. Cada grupo tiene un `nombre` (se muestra en el selector del dashboard), un `spreadsheetId` (la planilla de ese grupo) y un `personas` (mapeo de numero de WhatsApp, formato `whatsapp:+54911...`, a nombre de esa persona). Ejemplo con dos grupos:
 
   ```json

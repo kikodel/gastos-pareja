@@ -32,6 +32,8 @@ const env = {
   googleServiceAccountEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '',
   googleServiceAccountPrivateKey: (process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
 
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
+
   grupos: parseGruposJson(process.env.GRUPOS_JSON),
 };
 
