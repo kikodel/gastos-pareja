@@ -163,12 +163,121 @@ body {
   box-shadow: 0 0 0 3px var(--color-primary-soft);
 }
 
+/* ---------- Filtros: chips ---------- */
+
+.filtro-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.filtro-chips-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-faint);
+}
+
+.filtro-chips-scroll {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: #fbfbfe;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.chip:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.chip-activo,
+.chip-activo:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
 /* ---------- Grid & cards ---------- */
 
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
+  animation: fadeInUp 0.35s ease both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- Carrusel de KPIs (mobile) ---------- */
+
+.kpi-carousel {
+  display: contents;
+}
+
+/* ---------- Skeleton loaders ---------- */
+
+.skeleton-card {
+  min-height: 130px;
+  background: linear-gradient(90deg, #eef0fa 25%, #f7f8fd 37%, #eef0fa 63%);
+  background-size: 400% 100%;
+  animation: skeleton-pulse 1.4s ease infinite;
+}
+
+@keyframes skeleton-pulse {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+/* ---------- Progreso de cuotas ---------- */
+
+.progreso-cuota {
+  width: 70px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.progreso-cuota-barra {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-dark));
+  transition: width 0.6s ease;
+}
+
+.progreso-cuota-texto {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .card {
@@ -672,5 +781,54 @@ tbody td:last-child {
   .filtros select {
     min-width: 0;
     flex: 1;
+  }
+
+  .filtro-chips {
+    flex: 1 1 100%;
+  }
+
+  .filtro-chips-scroll {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .filtro-chips-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .chip {
+    scroll-snap-align: start;
+  }
+
+  .kpi-carousel {
+    display: flex;
+    overflow-x: auto;
+    gap: 14px;
+    padding-bottom: 4px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .kpi-carousel::-webkit-scrollbar {
+    display: none;
+  }
+
+  .kpi-carousel > .card {
+    flex: 0 0 84%;
+    scroll-snap-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grid,
+  .skeleton-card,
+  .progreso-cuota-barra,
+  .card {
+    animation: none !important;
+    transition: none !important;
   }
 }

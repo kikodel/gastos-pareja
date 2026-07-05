@@ -11,6 +11,26 @@ function generarMesesDisponibles(cantidad = 12) {
   return meses;
 }
 
+function ChipGroup({ label, opciones, valor, onSelect }) {
+  return (
+    <div className="filtro-chips">
+      <span className="filtro-chips-label">{label}</span>
+      <div className="filtro-chips-scroll">
+        {opciones.map((op) => (
+          <button
+            key={op.value}
+            type="button"
+            className={`chip${valor === op.value ? ' chip-activo' : ''}`}
+            onClick={() => onSelect(op.value)}
+          >
+            {op.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Filtros({ filtros, onChange, personasDisponibles, grupos, bloqueado }) {
   const meses = generarMesesDisponibles();
 
@@ -32,49 +52,29 @@ export default function Filtros({ filtros, onChange, personasDisponibles, grupos
 
       {!bloqueado && (
         <>
-          <label>
-            Mes
-            <select
-              value={filtros.mes}
-              onChange={(e) => onChange({ ...filtros, mes: e.target.value })}
-            >
-              {meses.map((mes) => (
-                <option key={mes} value={mes}>
-                  {mes}
-                </option>
-              ))}
-            </select>
-          </label>
+          <ChipGroup
+            label="Mes"
+            valor={filtros.mes}
+            onSelect={(mes) => onChange({ ...filtros, mes })}
+            opciones={meses.map((mes) => ({ value: mes, label: mes }))}
+          />
 
-          <label>
-            Categoria
-            <select
-              value={filtros.categoria}
-              onChange={(e) => onChange({ ...filtros, categoria: e.target.value })}
-            >
-              <option value="">Todas</option>
-              {CATEGORIAS.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </label>
+          <ChipGroup
+            label="Categoria"
+            valor={filtros.categoria}
+            onSelect={(categoria) => onChange({ ...filtros, categoria })}
+            opciones={[{ value: '', label: 'Todas' }, ...CATEGORIAS.map((cat) => ({ value: cat, label: cat }))]}
+          />
 
-          <label>
-            Persona
-            <select
-              value={filtros.persona}
-              onChange={(e) => onChange({ ...filtros, persona: e.target.value })}
-            >
-              <option value="">Ambos</option>
-              {personasDisponibles.map((persona) => (
-                <option key={persona} value={persona}>
-                  {persona}
-                </option>
-              ))}
-            </select>
-          </label>
+          <ChipGroup
+            label="Persona"
+            valor={filtros.persona}
+            onSelect={(persona) => onChange({ ...filtros, persona })}
+            opciones={[
+              { value: '', label: 'Ambos' },
+              ...personasDisponibles.map((persona) => ({ value: persona, label: persona })),
+            ]}
+          />
         </>
       )}
     </div>

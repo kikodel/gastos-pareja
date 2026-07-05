@@ -24,6 +24,7 @@ import ConfiguracionFamilia from './components/ConfiguracionFamilia';
 import ImportarPdf from './components/ImportarPdf';
 import ProximoMes from './components/ProximoMes';
 import CuotasActivas from './components/CuotasActivas';
+import SkeletonCards from './components/SkeletonCards';
 
 function mesActual() {
   const hoy = new Date();
@@ -258,14 +259,16 @@ export default function App() {
       )}
 
       {autenticado && error && <p className="error">{error}</p>}
-      {autenticado && cargando && <p className="cargando">Cargando...</p>}
+      {autenticado && cargando && <SkeletonCards />}
 
       {autenticado && !cargando && !error && resumen && (
         <>
           <Alertas resumen={resumen} config={config} />
-          <div className="grid">
-            <ResumenMes totalMes={resumen.totalMes} totalMesAnterior={resumen.totalMesAnterior} />
-            <ProximoMes pendientesProximoMes={proyeccion?.pendientesProximoMes} />
+          <div className="grid" key={`${filtros.mes}|${filtros.categoria}|${filtros.persona}`}>
+            <div className="kpi-carousel">
+              <ResumenMes totalMes={resumen.totalMes} totalMesAnterior={resumen.totalMesAnterior} />
+              <ProximoMes pendientesProximoMes={proyeccion?.pendientesProximoMes} />
+            </div>
             <GraficoCategorias porCategoria={resumen.porCategoria} />
             <EvolucionMensual evolucionMensual={resumen.evolucionMensual} />
             <ComparacionPersonas porPersona={resumen.porPersona} />

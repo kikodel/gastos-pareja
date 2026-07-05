@@ -28,7 +28,15 @@ export default function CuotasActivas({ cuotasActivas }) {
                   </td>
                   <td>{c.persona}</td>
                   <td>
-                    {c.cuotaActual}/{c.cuotasTotal}
+                    <div className="progreso-cuota">
+                      <div
+                        className="progreso-cuota-barra"
+                        style={{ width: `${Math.min((c.cuotaActual / c.cuotasTotal) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <span className="progreso-cuota-texto">
+                      {c.cuotaActual}/{c.cuotasTotal}
+                    </span>
                   </td>
                   <td>{formatearMoneda(c.montoPorCuota)}</td>
                   <td>
