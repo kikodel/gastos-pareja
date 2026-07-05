@@ -15,6 +15,17 @@ function crearRespuestaConfirmacion({ monto, categoria, descripcion, persona, al
   return twimlResponse.toString();
 }
 
+function crearRespuestaConfirmacionCuotas({ montoTotal, cuotas, montoPorCuota, categoria, descripcion, persona, alertas = [] }) {
+  const twimlResponse = new MessagingResponse();
+  twimlResponse.message(
+    `✅ Gasto en cuotas registrado: $${formatearMonto(montoTotal)} en ${cuotas} cuotas de $${formatearMonto(montoPorCuota)} - ${categoria} (${descripcion}) - ${persona}. Se reparte en los próximos ${cuotas} meses.`
+  );
+  alertas.forEach((texto) => {
+    twimlResponse.message(texto);
+  });
+  return twimlResponse.toString();
+}
+
 function crearRespuestaError() {
   const twimlResponse = new MessagingResponse();
   twimlResponse.message(
@@ -40,6 +51,7 @@ function crearRespuestaTexto(texto) {
 module.exports = {
   formatearMonto,
   crearRespuestaConfirmacion,
+  crearRespuestaConfirmacionCuotas,
   crearRespuestaError,
   crearRespuestaNumeroNoRegistrado,
   crearRespuestaTexto,

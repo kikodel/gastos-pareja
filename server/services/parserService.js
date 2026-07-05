@@ -6,6 +6,7 @@ const PALABRAS_PREGUNTA = [
 ];
 
 const REGEX_MONTO = /\$?\s*([0-9][0-9.,]*)/;
+const REGEX_CUOTAS = /\b([0-9]+)\s*cuotas?\b/i;
 
 function normalizarMonto(token) {
   const limpio = token.replace(/\s/g, '');
@@ -38,21 +39,28 @@ function limpiarDescripcion(texto) {
 
 function parsearMensaje(body) {
   const original = (body || '').trim();
-  const match = REGEX_MONTO.exec(original);
+
+  const matchCuotas = REGEX_CUOTAS.exec(original);
+  const cuotas = matchCuotas ? Math.max(1, parseInt(matchCuotas[1], 10)) : 1;
+  const textoSinCuotas = matchCuotas
+    ? (original.slice(0, matchCuotas.index) + original.slice(matchCuotas.index + matchCuotas[0].length)).trim()
+    : original;
+
+  const match = REGEX_MONTO.exec(textoSinCuotas);
 
   if (!match) {
-    return { monto: null, descripcion: '', original };
+    return { monto: null, descripcion: '', original, cuotas: 1 };
   }
 
   const monto = normalizarMonto(match[1]);
   if (Number.isNaN(monto)) {
-    return { monto: null, descripcion: '', original };
+    return { monto: null, descripcion: '', original, cuotas: 1 };
   }
 
-  const sinMonto = (original.slice(0, match.index) + original.slice(match.index + match[0].length)).trim();
+  const sinMonto = (textoSinCuotas.slice(0, match.index) + textoSinCuotas.slice(match.index + match[0].length)).trim();
   const descripcion = limpiarDescripcion(sinMonto) || 'Sin descripcion';
 
-  return { monto, descripcion, original };
+  return { monto, descripcion, original, cuotas };
 }
 
 function esPregunta(texto) {

@@ -2,8 +2,10 @@ const express = require('express');
 const { parsearMensaje, esPregunta } = require('../services/parserService');
 const { categorizar } = require('../services/categorizerService');
 const { agregarGasto, leerGastos, leerConfig } = require('../services/sheetsService');
+const { calcularMontosPorCuota, generarFechasCuotas } = require('../services/cuotasService');
 const {
   crearRespuestaConfirmacion,
+  crearRespuestaConfirmacionCuotas,
   crearRespuestaError,
   crearRespuestaNumeroNoRegistrado,
   crearRespuestaTexto,
@@ -43,8 +45,9 @@ router.post('/', validateTwilioSignature, async (req, res) => {
   }
 
   const { persona, spreadsheetId } = resuelto;
-  const { monto, descripcion, original } = parsearMensaje(Body);
-  const fecha = formatearFecha(new Date());
+  const { monto, descripcion, original, cuotas } = parsearMensaje(Body);
+  const ahora = new Date();
+  const fecha = formatearFecha(ahora);
   const mesActual = fecha.slice(0, 7);
 
   if (monto === null) {
@@ -65,6 +68,9 @@ router.post('/', validateTwilioSignature, async (req, res) => {
   }
 
   const categoria = await categorizar(descripcion);
+  const esCuotas = cuotas > 1;
+  const montosPorCuota = esCuotas ? calcularMontosPorCuota(monto, cuotas) : [monto];
+  const fechasCuotas = esCuotas ? generarFechasCuotas(ahora, cuotas) : [ahora];
 
   let alertas = [];
   try {
@@ -72,30 +78,42 @@ router.post('/', validateTwilioSignature, async (req, res) => {
       leerGastos(spreadsheetId),
       leerConfig(spreadsheetId),
     ]);
-    alertas = calcularAlertas({ gastosAntes, config, categoria, monto, mesActual });
+    alertas = calcularAlertas({ gastosAntes, config, categoria, monto: montosPorCuota[0], mesActual });
   } catch (err) {
     console.error('Error al calcular alertas (se ignora, no bloquea el registro):', err);
   }
 
   try {
-    await agregarGasto(spreadsheetId, {
-      fecha,
-      persona,
-      monto,
-      categoria,
-      descripcion,
-      mensajeOriginal: original,
-      moneda: 'ARS',
-    });
+    for (let i = 0; i < fechasCuotas.length; i += 1) {
+      await agregarGasto(spreadsheetId, {
+        fecha: formatearFecha(fechasCuotas[i]),
+        persona,
+        monto: montosPorCuota[i],
+        categoria,
+        descripcion: esCuotas ? `${descripcion} (cuota ${i + 1}/${cuotas})` : descripcion,
+        mensajeOriginal: original,
+        moneda: 'ARS',
+      });
+    }
   } catch (err) {
     console.error('Error al escribir en Google Sheets:', err);
     res.status(500).type('text/xml').send(crearRespuestaError());
     return;
   }
 
-  res.type('text/xml').send(
-    crearRespuestaConfirmacion({ monto, categoria, descripcion, persona, alertas })
-  );
+  const respuestaTwiml = esCuotas
+    ? crearRespuestaConfirmacionCuotas({
+        montoTotal: monto,
+        cuotas,
+        montoPorCuota: montosPorCuota[0],
+        categoria,
+        descripcion,
+        persona,
+        alertas,
+      })
+    : crearRespuestaConfirmacion({ monto, categoria, descripcion, persona, alertas });
+
+  res.type('text/xml').send(respuestaTwiml);
 });
 
 module.exports = router;

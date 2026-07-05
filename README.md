@@ -14,6 +14,16 @@ Ejemplos: `150 supermercado`, `$3200 nafta auto`, `gaste 150 en supermercado`, `
 
 El bot responde confirmando el monto, la categoria detectada y quien lo registro. Si no puede reconocer el monto, te pide que lo reformules.
 
+### Gastos en cuotas
+
+Si agregas la cantidad de cuotas al mensaje, el bot divide el monto total en partes iguales y genera un gasto por mes (uno este mes, y el resto en los meses siguientes), en vez de cargar todo de una vez:
+
+```
+12000 zapatillas 6 cuotas
+```
+
+Esto crea 6 gastos de $2.000 (`zapatillas (cuota 1/6)`, `zapatillas (cuota 2/6)`, etc.), uno por mes, empezando este mes. Si la division no es exacta, el ultimo mes absorbe la diferencia de redondeo (para que la suma total sea siempre exacta). Las alertas de limite por categoria y meta de ahorro solo consideran el monto de la cuota de ese mes, no el total de la compra.
+
 **Importante — limitacion del WhatsApp Sandbox de Twilio (version gratuita):** no se puede agregar el bot a un grupo de WhatsApp real. Cada persona le escribe sus gastos directo al bot por su chat individual (1 a 1), y todos los gastos se juntan igual en la misma planilla y dashboard. Si mas adelante quieren que el bot lea mensajes de un grupo compartido, hay que migrar a WhatsApp Business Cloud API (Meta), lo cual requiere verificacion de negocio.
 
 ## Categorias
