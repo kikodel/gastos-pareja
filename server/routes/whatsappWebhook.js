@@ -14,6 +14,11 @@ const { calcularAlertas } = require('../services/alertasService');
 const { responderPregunta } = require('../services/preguntasService');
 const { resolverGrupoYPersonaPorNumero } = require('../config/grupos');
 const { validateTwilioSignature } = require('../utils/validateTwilioSignature');
+const { descargarMediaTwilio } = require('../services/mediaService');
+const { extraerTextoPdf } = require('../services/pdfService');
+const { extraerMovimientos } = require('../services/importacionService');
+const { guardarPendiente } = require('../services/importacionesPendientesService');
+const { env } = require('../config/env');
 
 const router = express.Router();
 const TIMEZONE = 'America/Argentina/Buenos_Aires';
@@ -36,7 +41,7 @@ function formatearFecha(date) {
 }
 
 router.post('/', validateTwilioSignature, async (req, res) => {
-  const { From, Body } = req.body;
+  const { From, Body, NumMedia, MediaUrl0, MediaContentType0 } = req.body;
 
   const resuelto = resolverGrupoYPersonaPorNumero(From);
   if (!resuelto) {
@@ -44,7 +49,31 @@ router.post('/', validateTwilioSignature, async (req, res) => {
     return;
   }
 
-  const { persona, spreadsheetId } = resuelto;
+  const { persona, spreadsheetId, grupoId } = resuelto;
+
+  const esPdfAdjunto = parseInt(NumMedia, 10) > 0 && (MediaContentType0 || '').toLowerCase() === 'application/pdf';
+  if (esPdfAdjunto) {
+    try {
+      const buffer = await descargarMediaTwilio(MediaUrl0);
+      const textoPdf = await extraerTextoPdf(buffer);
+      const movimientos = await extraerMovimientos(textoPdf);
+      guardarPendiente(grupoId, movimientos);
+
+      const link = env.publicBaseUrl ? ` ${env.publicBaseUrl}` : '';
+      res.type('text/xml').send(
+        crearRespuestaTexto(
+          `📄 Recibí tu resumen y encontré ${movimientos.length} movimiento(s). Entrá al dashboard (botón "📄 Importar resumen") para revisarlos y confirmar antes de guardarlos:${link}`
+        )
+      );
+    } catch (err) {
+      console.error('Error al procesar PDF recibido por WhatsApp:', err);
+      res.type('text/xml').send(
+        crearRespuestaTexto('⚠️ No pude leer ese PDF. Probá subirlo directamente desde el botón "Importar resumen" del dashboard.')
+      );
+    }
+    return;
+  }
+
   const { monto, descripcion, original, cuotas } = parsearMensaje(Body);
   const ahora = new Date();
   const fecha = formatearFecha(ahora);

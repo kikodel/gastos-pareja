@@ -5,6 +5,7 @@ const { ORDEN_CATEGORIAS } = require('../config/categorias');
 const { obtenerGrupo, verificarPassword } = require('../config/grupos');
 const { extraerTextoPdf } = require('../services/pdfService');
 const { extraerMovimientos } = require('../services/importacionService');
+const { obtenerPendiente, limpiarPendiente } = require('../services/importacionesPendientesService');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -175,11 +176,20 @@ router.post('/confirmar-importacion', async (req, res) => {
       });
       importados += 1;
     }
+    limpiarPendiente(req.query.grupo);
     res.json({ ok: true, importados });
   } catch (err) {
     console.error('Error al confirmar importacion:', err);
     res.status(500).json({ error: 'No se pudo completar la importacion', importados });
   }
+});
+
+router.get('/importacion-pendiente', (req, res) => {
+  const spreadsheetId = resolverSpreadsheetId(req, res);
+  if (!spreadsheetId) return;
+
+  const movimientos = obtenerPendiente(req.query.grupo);
+  res.json({ movimientos });
 });
 
 module.exports = router;

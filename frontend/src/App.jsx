@@ -9,6 +9,7 @@ import {
   eliminarGasto,
   importarPdf,
   confirmarImportacion,
+  obtenerImportacionPendiente,
 } from './api/gastosClient';
 import Filtros from './components/Filtros';
 import PasswordGate from './components/PasswordGate';
@@ -163,6 +164,10 @@ export default function App() {
     return importarPdf(filtros.grupo, passwords[filtros.grupo], archivo);
   }
 
+  function manejarCargarPendiente() {
+    return obtenerImportacionPendiente(filtros.grupo, passwords[filtros.grupo]);
+  }
+
   async function manejarConfirmarImportacion(gastosSeleccionados) {
     const resultado = await confirmarImportacion(filtros.grupo, passwords[filtros.grupo], gastosSeleccionados);
     await cargarGastosYResumen();
@@ -219,6 +224,7 @@ export default function App() {
           personasDisponibles={personasDisponibles}
           onExtraer={manejarExtraerPdf}
           onConfirmar={manejarConfirmarImportacion}
+          onCargarPendiente={manejarCargarPendiente}
           onCerrar={() => setMostrarImportarPdf(false)}
         />
       )}

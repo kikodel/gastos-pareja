@@ -1,13 +1,35 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CATEGORIAS } from '../constants';
 
-export default function ImportarPdf({ personasDisponibles, onExtraer, onConfirmar, onCerrar }) {
+function prepararFilas(extraidos, personasDisponibles) {
+  return extraidos.map((mov) => ({
+    ...mov,
+    fecha: mov.fecha || new Date().toISOString().slice(0, 10),
+    persona: personasDisponibles[0] || '',
+    incluir: true,
+  }));
+}
+
+export default function ImportarPdf({ personasDisponibles, onExtraer, onConfirmar, onCerrar, onCargarPendiente }) {
   const [archivo, setArchivo] = useState(null);
   const [movimientos, setMovimientos] = useState(null);
+  const [vienePendiente, setVienePendiente] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
   const [resultado, setResultado] = useState(null);
+
+  useEffect(() => {
+    onCargarPendiente()
+      .then((pendientes) => {
+        if (pendientes && pendientes.length > 0) {
+          setMovimientos(prepararFilas(pendientes, personasDisponibles));
+          setVienePendiente(true);
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function manejarExtraer() {
     if (!archivo) return;
@@ -15,14 +37,8 @@ export default function ImportarPdf({ personasDisponibles, onExtraer, onConfirma
     setError(null);
     try {
       const extraidos = await onExtraer(archivo);
-      setMovimientos(
-        extraidos.map((mov) => ({
-          ...mov,
-          fecha: mov.fecha || new Date().toISOString().slice(0, 10),
-          persona: personasDisponibles[0] || '',
-          incluir: true,
-        }))
-      );
+      setMovimientos(prepararFilas(extraidos, personasDisponibles));
+      setVienePendiente(false);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.error || 'No se pudo procesar el PDF. Probá con otro archivo.');
@@ -93,6 +109,9 @@ export default function ImportarPdf({ personasDisponibles, onExtraer, onConfirma
 
       {movimientos && (
         <>
+          {vienePendiente && (
+            <p className="exito">📲 Estos movimientos vienen de un resumen que mandaste por WhatsApp.</p>
+          )}
           <p className="config-familia-ayuda">
             Revisá y corregí lo que haga falta antes de confirmar. Desmarcá las filas que no correspondan.
           </p>

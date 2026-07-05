@@ -42,6 +42,8 @@ Desde el botón **📄 Importar resumen** del dashboard se puede subir el PDF de
 
 Esto requiere `ANTHROPIC_API_KEY` configurada. Como el formato de cada banco es distinto, conviene siempre revisar la tabla antes de confirmar — la IA es buena extrayendo pero no infalible, sobre todo con resumenes muy largos o con formatos raros.
 
+**También se puede mandar el PDF directo por WhatsApp** (como documento adjunto, no como foto) en vez de subirlo desde la web. El bot lo procesa igual (extrae y categoriza los movimientos) y responde con un mensaje confirmando cuántos encontró, pidiendo que entres al dashboard a revisarlos y confirmarlos — el paso de revisión se mantiene igual, solo cambia de dónde sale el archivo. Al abrir "📄 Importar resumen" en el dashboard, si hay un envío pendiente por WhatsApp se precarga solo, sin tener que volver a subir el archivo. Estos pendientes quedan en memoria del servidor (se pierden si el servidor se reinicia, o expiran a las 24hs) — no son persistentes.
+
 ## Preguntas por WhatsApp
 
 Ademas de registrar gastos, le podés preguntar cosas al bot en lenguaje natural, por ejemplo:

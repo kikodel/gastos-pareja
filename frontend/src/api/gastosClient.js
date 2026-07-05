@@ -49,3 +49,8 @@ export async function confirmarImportacion(grupo, password, gastos) {
   const { data } = await axios.post('/api/gastos/confirmar-importacion', { gastos }, { params: { grupo, password } });
   return data;
 }
+
+export async function obtenerImportacionPendiente(grupo, password) {
+  const { data } = await axios.get('/api/gastos/importacion-pendiente', { params: { grupo, password } });
+  return data.movimientos;
+}
