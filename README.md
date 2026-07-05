@@ -32,6 +32,16 @@ Supermercado, Comida afuera, Transporte, Servicios/Cuentas, Salud, Ocio, Ropa, H
 
 **Categorizacion con IA**: si ninguna palabra clave matchea, en vez de caer directo en "Otros" el bot le pregunta a Claude (Anthropic) que categoria le parece mas apropiada segun la descripcion del gasto. Esto requiere la variable de entorno `ANTHROPIC_API_KEY` (ver seccion de variables de entorno) — si no esta configurada, o si Claude no responde a tiempo, cae en "Otros" como antes, sin romper nada. Las palabras clave siguen siendo el primer filtro (mas rapido y sin costo); Claude solo se usa cuando ninguna keyword matcheo.
 
+## Importar resumen de tarjeta (PDF)
+
+Desde el botón **📄 Importar resumen** del dashboard se puede subir el PDF del resumen de una tarjeta de crédito (de cualquier banco). El proceso:
+
+1. Se extrae el texto del PDF y se le manda a Claude, que identifica cada consumo individual (fecha, comercio, monto), ignorando saldo anterior, pagos, intereses, IVA y el total a pagar. Si un consumo está en cuotas, se respeta el monto de esa cuota puntual tal como figura en el resumen (no se recalcula nada).
+2. Los movimientos extraídos se muestran en una tabla editable **antes** de guardar nada: se puede corregir fecha, descripción, monto, categoría y persona, o destildar los que no correspondan.
+3. Recién al tocar "Confirmar importación" se guardan como gastos reales en la Google Sheet de esa familia.
+
+Esto requiere `ANTHROPIC_API_KEY` configurada. Como el formato de cada banco es distinto, conviene siempre revisar la tabla antes de confirmar — la IA es buena extrayendo pero no infalible, sobre todo con resumenes muy largos o con formatos raros.
+
 ## Preguntas por WhatsApp
 
 Ademas de registrar gastos, le podés preguntar cosas al bot en lenguaje natural, por ejemplo:

@@ -7,6 +7,8 @@ import {
   obtenerConfig,
   guardarConfigGrupo,
   eliminarGasto,
+  importarPdf,
+  confirmarImportacion,
 } from './api/gastosClient';
 import Filtros from './components/Filtros';
 import PasswordGate from './components/PasswordGate';
@@ -17,6 +19,7 @@ import ComparacionPersonas from './components/ComparacionPersonas';
 import TablaGastos from './components/TablaGastos';
 import Alertas from './components/Alertas';
 import ConfiguracionFamilia from './components/ConfiguracionFamilia';
+import ImportarPdf from './components/ImportarPdf';
 
 function mesActual() {
   const hoy = new Date();
@@ -39,6 +42,7 @@ export default function App() {
   const [gastosTotales, setGastosTotales] = useState([]);
   const [config, setConfig] = useState(null);
   const [mostrarConfig, setMostrarConfig] = useState(false);
+  const [mostrarImportarPdf, setMostrarImportarPdf] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [passwords, setPasswords] = useState(cargarPasswordsGuardadas);
@@ -155,6 +159,16 @@ export default function App() {
     }
   }
 
+  function manejarExtraerPdf(archivo) {
+    return importarPdf(filtros.grupo, passwords[filtros.grupo], archivo);
+  }
+
+  async function manejarConfirmarImportacion(gastosSeleccionados) {
+    const resultado = await confirmarImportacion(filtros.grupo, passwords[filtros.grupo], gastosSeleccionados);
+    await cargarGastosYResumen();
+    return resultado;
+  }
+
   return (
     <div className="app">
       <header className="app-header">
@@ -168,9 +182,18 @@ export default function App() {
           </div>
         </div>
         {autenticado && (
-          <button type="button" className="config-toggle" onClick={() => setMostrarConfig((v) => !v)}>
-            {mostrarConfig ? 'Cerrar configuración' : '⚙️ Configuración'}
-          </button>
+          <div className="app-header-acciones">
+            <button
+              type="button"
+              className="config-toggle"
+              onClick={() => setMostrarImportarPdf((v) => !v)}
+            >
+              {mostrarImportarPdf ? 'Cerrar importación' : '📄 Importar resumen'}
+            </button>
+            <button type="button" className="config-toggle" onClick={() => setMostrarConfig((v) => !v)}>
+              {mostrarConfig ? 'Cerrar configuración' : '⚙️ Configuración'}
+            </button>
+          </div>
         )}
       </header>
 
@@ -188,6 +211,15 @@ export default function App() {
           error={passwordError}
           cargando={verificandoPassword}
           onSubmit={manejarSubmitPassword}
+        />
+      )}
+
+      {autenticado && mostrarImportarPdf && (
+        <ImportarPdf
+          personasDisponibles={personasDisponibles}
+          onExtraer={manejarExtraerPdf}
+          onConfirmar={manejarConfirmarImportacion}
+          onCerrar={() => setMostrarImportarPdf(false)}
         />
       )}
 

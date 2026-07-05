@@ -5,4 +5,9 @@ function crearCliente() {
   return new Anthropic({ apiKey: env.anthropicApiKey });
 }
 
-module.exports = { crearCliente };
+function extraerTexto(respuesta) {
+  const bloque = (respuesta.content || []).find((b) => b.type === 'text');
+  return bloque ? bloque.text : '';
+}
+
+module.exports = { crearCliente, extraerTexto };

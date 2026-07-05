@@ -1,9 +1,13 @@
 const express = require('express');
-const { leerGastos, eliminarGasto } = require('../services/sheetsService');
+const multer = require('multer');
+const { leerGastos, agregarGasto, eliminarGasto } = require('../services/sheetsService');
 const { ORDEN_CATEGORIAS } = require('../config/categorias');
 const { obtenerGrupo, verificarPassword } = require('../config/grupos');
+const { extraerTextoPdf } = require('../services/pdfService');
+const { extraerMovimientos } = require('../services/importacionService');
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 function resolverSpreadsheetId(req, res) {
   const { grupo, password } = req.query;
@@ -121,6 +125,60 @@ router.delete('/:fila', async (req, res) => {
   } catch (err) {
     console.error('Error al eliminar gasto:', err);
     res.status(500).json({ error: 'No se pudo eliminar el gasto' });
+  }
+});
+
+router.post('/importar-pdf', upload.single('file'), async (req, res) => {
+  const spreadsheetId = resolverSpreadsheetId(req, res);
+  if (!spreadsheetId) return;
+
+  if (!req.file) {
+    res.status(400).json({ error: 'Falta el archivo PDF' });
+    return;
+  }
+
+  try {
+    const texto = await extraerTextoPdf(req.file.buffer);
+    const movimientos = await extraerMovimientos(texto);
+    res.json({ movimientos });
+  } catch (err) {
+    console.error('Error al importar PDF:', err);
+    res.status(500).json({ error: err.message || 'No se pudo procesar el PDF' });
+  }
+});
+
+router.post('/confirmar-importacion', async (req, res) => {
+  const spreadsheetId = resolverSpreadsheetId(req, res);
+  if (!spreadsheetId) return;
+
+  const gastos = Array.isArray(req.body.gastos) ? req.body.gastos : [];
+  if (gastos.length === 0) {
+    res.status(400).json({ error: 'No hay gastos para importar' });
+    return;
+  }
+
+  let importados = 0;
+  try {
+    for (const gasto of gastos) {
+      const monto = parseFloat(gasto.monto);
+      if (Number.isNaN(monto) || monto <= 0) continue;
+      const fecha = /^\d{4}-\d{2}-\d{2}$/.test(gasto.fecha || '') ? gasto.fecha : new Date().toISOString().slice(0, 10);
+
+      await agregarGasto(spreadsheetId, {
+        fecha: `${fecha} 00:00`,
+        persona: gasto.persona || 'Desconocido',
+        monto,
+        categoria: gasto.categoria || 'Otros',
+        descripcion: gasto.descripcion || 'Sin descripcion',
+        mensajeOriginal: 'Importado desde resumen de tarjeta',
+        moneda: 'ARS',
+      });
+      importados += 1;
+    }
+    res.json({ ok: true, importados });
+  } catch (err) {
+    console.error('Error al confirmar importacion:', err);
+    res.status(500).json({ error: 'No se pudo completar la importacion', importados });
   }
 });
 

@@ -1,4 +1,4 @@
-const { crearCliente } = require('./claudeService');
+const { crearCliente, extraerTexto } = require('./claudeService');
 const { env } = require('../config/env');
 
 const MODELO_PREGUNTAS = 'claude-haiku-4-5-20251001';
@@ -83,7 +83,7 @@ async function responderPregunta({ pregunta, gastos, config, persona, mesActual 
       { timeout: TIMEOUT_MS }
     );
 
-    return (respuesta.content?.[0]?.text || '').trim() || 'No pude generar una respuesta, intentá reformular la pregunta.';
+    return extraerTexto(respuesta).trim() || 'No pude generar una respuesta, intentá reformular la pregunta.';
   } catch (err) {
     console.error('Error al responder pregunta con IA:', err.message);
     return 'No pude responder tu pregunta ahora, intentá de nuevo en un rato.';

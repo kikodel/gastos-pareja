@@ -1,5 +1,5 @@
 const { CATEGORIAS, ORDEN_CATEGORIAS } = require('../config/categorias');
-const { crearCliente } = require('./claudeService');
+const { crearCliente, extraerTexto } = require('./claudeService');
 const { env } = require('../config/env');
 
 const MODELO_CATEGORIZACION = 'claude-haiku-4-5-20251001';
@@ -39,7 +39,7 @@ async function categorizarConIA(descripcion) {
       { timeout: TIMEOUT_MS }
     );
 
-    const texto = (respuesta.content?.[0]?.text || '').trim();
+    const texto = extraerTexto(respuesta).trim();
     return ORDEN_CATEGORIAS.includes(texto) ? texto : 'Otros';
   } catch (err) {
     console.error('Error al categorizar con IA (se usa Otros):', err.message);
