@@ -7,6 +7,7 @@ const { extraerTextoPdf } = require('../services/pdfService');
 const { extraerMovimientos } = require('../services/importacionService');
 const { obtenerPendiente, limpiarPendiente } = require('../services/importacionesPendientesService');
 const { obtenerMesActualReal, calcularPendientesProximoMes, calcularCuotasActivas } = require('../services/proyeccionService');
+const { generarFechasCuotas } = require('../services/cuotasService');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -165,17 +166,44 @@ router.post('/confirmar-importacion', async (req, res) => {
       const monto = parseFloat(gasto.monto);
       if (Number.isNaN(monto) || monto <= 0) continue;
       const fecha = /^\d{4}-\d{2}-\d{2}$/.test(gasto.fecha || '') ? gasto.fecha : new Date().toISOString().slice(0, 10);
+      const persona = gasto.persona || 'Desconocido';
+      const categoria = gasto.categoria || 'Otros';
+      const descripcionBase = gasto.descripcion || 'Sin descripcion';
 
-      await agregarGasto(spreadsheetId, {
-        fecha: `${fecha} 00:00`,
-        persona: gasto.persona || 'Desconocido',
-        monto,
-        categoria: gasto.categoria || 'Otros',
-        descripcion: gasto.descripcion || 'Sin descripcion',
-        mensajeOriginal: 'Importado desde resumen de tarjeta',
-        moneda: 'ARS',
-      });
-      importados += 1;
+      const cuotaActual = parseInt(gasto.cuotaActual, 10);
+      const cuotasTotal = parseInt(gasto.cuotasTotal, 10);
+      const esCuota = gasto.tipo === 'cuota' && !Number.isNaN(cuotaActual) && !Number.isNaN(cuotasTotal) && cuotasTotal > cuotaActual;
+
+      if (esCuota) {
+        const cantidadAGenerar = cuotasTotal - cuotaActual + 1;
+        const fechaBase = new Date(`${fecha}T00:00:00`);
+        const fechas = generarFechasCuotas(fechaBase, cantidadAGenerar);
+        for (let i = 0; i < fechas.length; i += 1) {
+          const numeroCuota = cuotaActual + i;
+          await agregarGasto(spreadsheetId, {
+            fecha: `${fechas[i].toISOString().slice(0, 10)} 00:00`,
+            persona,
+            monto,
+            categoria,
+            descripcion: `${descripcionBase} (cuota ${numeroCuota}/${cuotasTotal})`,
+            mensajeOriginal: 'Importado desde resumen de tarjeta',
+            moneda: 'ARS',
+          });
+          importados += 1;
+        }
+      } else {
+        const descripcionFinal = gasto.tipo === 'debito' ? `${descripcionBase} (débito automático)` : descripcionBase;
+        await agregarGasto(spreadsheetId, {
+          fecha: `${fecha} 00:00`,
+          persona,
+          monto,
+          categoria,
+          descripcion: descripcionFinal,
+          mensajeOriginal: 'Importado desde resumen de tarjeta',
+          moneda: 'ARS',
+        });
+        importados += 1;
+      }
     }
     limpiarPendiente(req.query.grupo);
     res.json({ ok: true, importados });

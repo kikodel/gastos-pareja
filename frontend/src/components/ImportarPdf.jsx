@@ -2,12 +2,19 @@ import { useEffect, useState } from 'react';
 import { CATEGORIAS } from '../constants';
 
 function prepararFilas(extraidos, personasDisponibles) {
-  return extraidos.map((mov) => ({
-    ...mov,
-    fecha: mov.fecha || new Date().toISOString().slice(0, 10),
-    persona: personasDisponibles[0] || '',
-    incluir: true,
-  }));
+  return extraidos.map((mov) => {
+    const detectoCuota =
+      mov.cuotaActual !== null && mov.cuotaActual !== undefined && mov.cuotasTotal !== null && mov.cuotasTotal !== undefined;
+    return {
+      ...mov,
+      fecha: mov.fecha || new Date().toISOString().slice(0, 10),
+      persona: personasDisponibles[0] || '',
+      incluir: true,
+      tipo: detectoCuota ? 'cuota' : 'unico',
+      cuotaActual: detectoCuota ? mov.cuotaActual : '',
+      cuotasTotal: detectoCuota ? mov.cuotasTotal : '',
+    };
+  });
 }
 
 export default function ImportarPdf({ personasDisponibles, onExtraer, onConfirmar, onCerrar, onCargarPendiente }) {
@@ -51,6 +58,10 @@ export default function ImportarPdf({ personasDisponibles, onExtraer, onConfirma
     setMovimientos((actual) => actual.map((mov, i) => (i === indice ? { ...mov, [campo]: valor } : mov)));
   }
 
+  function quitarFila(indice) {
+    setMovimientos((actual) => actual.filter((_, i) => i !== indice));
+  }
+
   function aplicarPersonaATodos(persona) {
     setMovimientos((actual) => actual.map((mov) => ({ ...mov, persona })));
   }
@@ -63,12 +74,15 @@ export default function ImportarPdf({ personasDisponibles, onExtraer, onConfirma
     setError(null);
     try {
       const res = await onConfirmar(
-        seleccionados.map(({ fecha, persona, categoria, descripcion, monto }) => ({
+        seleccionados.map(({ fecha, persona, categoria, descripcion, monto, tipo, cuotaActual, cuotasTotal }) => ({
           fecha,
           persona,
           categoria,
           descripcion,
           monto,
+          tipo,
+          cuotaActual: tipo === 'cuota' ? cuotaActual : null,
+          cuotasTotal: tipo === 'cuota' ? cuotasTotal : null,
         }))
       );
       setResultado(`Se importaron ${res.importados} gastos correctamente.`);
@@ -113,7 +127,8 @@ export default function ImportarPdf({ personasDisponibles, onExtraer, onConfirma
             <p className="exito">📲 Estos movimientos vienen de un resumen que mandaste por WhatsApp.</p>
           )}
           <p className="config-familia-ayuda">
-            Revisá y corregí lo que haga falta antes de confirmar. Desmarcá las filas que no correspondan.
+            Revisá y corregí lo que haga falta antes de confirmar. Desmarcá o quitá las filas que no correspondan. Si
+            marcás "Cuotas", se generan automáticamente las filas de los meses que faltan.
           </p>
 
           {personasDisponibles.length > 0 && (
@@ -142,6 +157,9 @@ export default function ImportarPdf({ personasDisponibles, onExtraer, onConfirma
                   <th>Monto</th>
                   <th>Categoria</th>
                   <th>Persona</th>
+                  <th>Tipo</th>
+                  <th>Cuota</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -193,6 +211,44 @@ export default function ImportarPdf({ personasDisponibles, onExtraer, onConfirma
                           </option>
                         ))}
                       </select>
+                    </td>
+                    <td>
+                      <select value={mov.tipo} onChange={(e) => actualizarFila(i, 'tipo', e.target.value)}>
+                        <option value="unico">Cuota única</option>
+                        <option value="cuota">Cuotas</option>
+                        <option value="debito">Débito automático</option>
+                      </select>
+                    </td>
+                    <td>
+                      {mov.tipo === 'cuota' && (
+                        <div className="importar-pdf-cuota-inputs">
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Actual"
+                            value={mov.cuotaActual}
+                            onChange={(e) => actualizarFila(i, 'cuotaActual', e.target.value)}
+                          />
+                          <span>/</span>
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Total"
+                            value={mov.cuotasTotal}
+                            onChange={(e) => actualizarFila(i, 'cuotasTotal', e.target.value)}
+                          />
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="eliminar-gasto"
+                        title="Quitar de la lista"
+                        onClick={() => quitarFila(i)}
+                      >
+                        🗑️
+                      </button>
                     </td>
                   </tr>
                 ))}

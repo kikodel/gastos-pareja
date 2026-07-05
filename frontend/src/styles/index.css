@@ -644,6 +644,18 @@ tbody td:last-child {
   padding: 6px 8px;
 }
 
+.importar-pdf-cuota-inputs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.importar-pdf-cuota-inputs input {
+  min-width: 50px;
+  width: 50px;
+}
+
 @media (max-width: 800px) {
   .app {
     padding: 20px 16px 48px;

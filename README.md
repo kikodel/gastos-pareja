@@ -42,9 +42,10 @@ Supermercado, Comida afuera, Transporte, Servicios/Cuentas, Salud, Ocio, Ropa, H
 
 Desde el botón **📄 Importar resumen** del dashboard se puede subir el PDF del resumen de una tarjeta de crédito (de cualquier banco). El proceso:
 
-1. Se extrae el texto del PDF y se le manda a Claude, que identifica cada consumo individual (fecha, comercio, monto), ignorando saldo anterior, pagos, intereses, IVA y el total a pagar. Si un consumo está en cuotas, se respeta el monto de esa cuota puntual tal como figura en el resumen (no se recalcula nada).
-2. Los movimientos extraídos se muestran en una tabla editable **antes** de guardar nada: se puede corregir fecha, descripción, monto, categoría y persona, o destildar los que no correspondan.
-3. Recién al tocar "Confirmar importación" se guardan como gastos reales en la Google Sheet de esa familia.
+1. Se extrae el texto del PDF y se le manda a Claude, que identifica cada consumo individual (fecha, comercio, monto), ignorando saldo anterior, pagos, intereses, IVA y el total a pagar. Si el resumen menciona una cuota (ej. "CUOTA 03/12"), Claude devuelve el numero de cuota actual y el total por separado — el monto que aparece en el resumen ya es el de esa cuota puntual, no se recalcula nada.
+2. Los movimientos extraídos se muestran en una tabla editable **antes** de guardar nada: se puede corregir fecha, descripción, monto, categoría y persona, destildar o **quitar directamente** (🗑️) las filas que no correspondan.
+3. Cada fila tiene un selector de **Tipo**: "Cuota única" (default), "Cuotas" (con los campos "cuota actual / total", precargados si Claude los detecto) o "Débito automático" (para pagos recurrentes sin cuotas fijas, se etiqueta en la descripcion pero no genera meses futuros).
+4. Recién al tocar "Confirmar importación" se guardan como gastos reales en la Google Sheet de esa familia. Si un item quedo marcado como "Cuotas", en vez de guardar una sola fila se generan automáticamente **todas las cuotas restantes** (desde la actual hasta la última), una por mes, con el mismo monto — igual que si se hubieran cargado por WhatsApp. Así "Cuotas activas" y "Pendiente del próximo mes" muestran datos reales en vez de una proyección estimada.
 
 Esto requiere `ANTHROPIC_API_KEY` configurada. Como el formato de cada banco es distinto, conviene siempre revisar la tabla antes de confirmar — la IA es buena extrayendo pero no infalible, sobre todo con resumenes muy largos o con formatos raros.
 

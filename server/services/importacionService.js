@@ -10,6 +10,11 @@ function limpiarJson(texto) {
   return texto.replace(/^```(json)?/i, '').replace(/```$/, '').trim();
 }
 
+function numeroONulo(valor) {
+  const numero = parseInt(valor, 10);
+  return Number.isNaN(numero) ? null : numero;
+}
+
 async function extraerMovimientos(textoPdf) {
   if (!env.anthropicApiKey) {
     throw new Error('ANTHROPIC_API_KEY no esta configurada');
@@ -28,10 +33,12 @@ async function extraerMovimientos(textoPdf) {
       system:
         'Sos un extractor de movimientos de resumenes de tarjeta de credito argentinos, de cualquier banco o tarjeta. ' +
         'Te paso el texto extraido de un PDF y tenes que devolver SOLO un JSON (sin markdown, sin texto alrededor) con un array de movimientos, ' +
-        'cada uno con este formato exacto: {"fecha": "YYYY-MM-DD o null si no esta claro", "descripcion": "comercio o detalle del consumo", "monto": numero positivo}. ' +
+        'cada uno con este formato exacto: {"fecha": "YYYY-MM-DD o null si no esta claro", "descripcion": "comercio o detalle del consumo, SIN mencionar el numero de cuota", ' +
+        '"monto": numero positivo, "cuotaActual": numero de cuota actual si el resumen lo indica (ej "CUOTA 03/12" -> 3) o null si no aplica, ' +
+        '"cuotasTotal": cantidad total de cuotas si el resumen lo indica (ej "CUOTA 03/12" -> 12) o null si no aplica}. ' +
         'Reglas importantes: ' +
         '- Incluí unicamente consumos/compras individuales; NO incluyas saldo anterior, pagos recibidos, intereses, IVA, seguros, cargos administrativos ni el total a pagar. ' +
-        '- Si un consumo esta en cuotas (ej. "CUOTA 03/12"), el monto que aparece en el resumen YA es el de esa cuota puntual — no calcules ni multipliques nada, y agregá "(cuota 3/12)" al final de la descripcion si el resumen lo indica. ' +
+        '- Si un consumo esta en cuotas, el monto que aparece en el resumen YA es el de esa cuota puntual — no calcules ni multipliques nada. ' +
         '- Si no hay ningun movimiento reconocible, devolvé un array vacio []. ' +
         '- No inventes movimientos que no esten en el texto.',
       messages: [{ role: 'user', content: texto }],
@@ -59,11 +66,15 @@ async function extraerMovimientos(textoPdf) {
     if (Number.isNaN(monto) || monto <= 0) continue;
     const descripcion = (mov.descripcion || 'Sin descripcion').toString().trim();
     const categoria = await categorizar(descripcion);
+    const cuotaActual = numeroONulo(mov.cuotaActual);
+    const cuotasTotal = numeroONulo(mov.cuotasTotal);
     movimientosValidos.push({
       fecha: typeof mov.fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(mov.fecha) ? mov.fecha : null,
       descripcion,
       monto,
       categoria,
+      cuotaActual,
+      cuotasTotal: cuotasTotal && cuotasTotal > (cuotaActual || 0) ? cuotasTotal : null,
     });
   }
 
