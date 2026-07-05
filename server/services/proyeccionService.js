@@ -24,19 +24,6 @@ function mesSiguiente(mes) {
   return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function calcularPendientesProximoMes(gastos, mesActual) {
-  const mes = mesSiguiente(mesActual);
-  const gastosDelMes = gastos.filter((g) => obtenerMesDeFecha(g.fecha) === mes);
-  const total = gastosDelMes.reduce((sum, g) => sum + g.monto, 0);
-
-  const porCategoria = {};
-  gastosDelMes.forEach((g) => {
-    porCategoria[g.categoria] = (porCategoria[g.categoria] || 0) + g.monto;
-  });
-
-  return { mes, total, cantidad: gastosDelMes.length, porCategoria };
-}
-
 function extraerInfoCuota(descripcion) {
   const match = REGEX_CUOTA.exec(descripcion || '');
   if (!match) return null;
@@ -47,6 +34,12 @@ function extraerInfoCuota(descripcion) {
   };
 }
 
+/**
+ * Agrupa por descripcion+persona (no por mensajeOriginal) para que las cuotas
+ * cargadas por WhatsApp (que generan filas futuras reales) y las importadas
+ * de un PDF (una sola fila, sin filas futuras) puedan reconocerse como la
+ * misma compra si el resumen de un mes posterior se vuelve a importar.
+ */
 function calcularCuotasActivas(gastos, mesActual) {
   const grupos = new Map();
 
@@ -54,7 +47,7 @@ function calcularCuotasActivas(gastos, mesActual) {
     const info = extraerInfoCuota(gasto.descripcion);
     if (!info) return;
 
-    const clave = `${gasto.mensajeOriginal}|||${gasto.persona}|||${info.descripcionBase}`;
+    const clave = `${info.descripcionBase}|||${gasto.persona}`;
     if (!grupos.has(clave)) {
       grupos.set(clave, {
         descripcion: info.descripcionBase,
@@ -69,30 +62,55 @@ function calcularCuotasActivas(gastos, mesActual) {
 
   const resultado = [];
   grupos.forEach((grupo) => {
+    const cuotaMasAvanzada = Math.max(...grupo.filas.map((f) => f.cuotaActual));
+    if (cuotaMasAvanzada >= grupo.cuotasTotal) return; // ya se termino de pagar
+
     const filasFuturas = grupo.filas.filter((f) => obtenerMesDeFecha(f.fecha) > mesActual);
-    if (filasFuturas.length === 0) return;
-
-    const filasHastaAhora = grupo.filas.filter((f) => obtenerMesDeFecha(f.fecha) <= mesActual);
-    const cuotaActualNum =
-      filasHastaAhora.length > 0
-        ? Math.max(...filasHastaAhora.map((f) => f.cuotaActual))
-        : Math.min(...grupo.filas.map((f) => f.cuotaActual)) - 1;
-
-    const montoPorCuota = filasFuturas[0].monto;
+    const cuotasRestantes = grupo.cuotasTotal - cuotaMasAvanzada;
+    const filaDeReferencia = grupo.filas.find((f) => f.cuotaActual === cuotaMasAvanzada);
 
     resultado.push({
       descripcion: grupo.descripcion,
       categoria: grupo.categoria,
       persona: grupo.persona,
-      cuotaActual: Math.max(cuotaActualNum, 0),
+      cuotaActual: cuotaMasAvanzada,
       cuotasTotal: grupo.cuotasTotal,
-      cuotasRestantes: filasFuturas.length,
-      montoPorCuota,
-      montoRestante: filasFuturas.reduce((sum, f) => sum + f.monto, 0),
+      cuotasRestantes,
+      montoPorCuota: filaDeReferencia.monto,
+      montoRestante:
+        filasFuturas.length > 0
+          ? filasFuturas.reduce((sum, f) => sum + f.monto, 0)
+          : filaDeReferencia.monto * cuotasRestantes,
+      // true si no hay filas futuras reales en la Sheet y el monto restante es una proyeccion
+      // (tipico de cuotas importadas de un PDF, que no generan las filas de los meses siguientes)
+      proyectado: filasFuturas.length === 0,
     });
   });
 
   return resultado.sort((a, b) => a.descripcion.localeCompare(b.descripcion));
+}
+
+function calcularPendientesProximoMes(gastos, mesActual) {
+  const mes = mesSiguiente(mesActual);
+  const gastosDelMes = gastos.filter((g) => obtenerMesDeFecha(g.fecha) === mes);
+
+  let total = gastosDelMes.reduce((sum, g) => sum + g.monto, 0);
+  let cantidad = gastosDelMes.length;
+  const porCategoria = {};
+  gastosDelMes.forEach((g) => {
+    porCategoria[g.categoria] = (porCategoria[g.categoria] || 0) + g.monto;
+  });
+
+  const cuotasActivas = calcularCuotasActivas(gastos, mesActual);
+  cuotasActivas.forEach((cuota) => {
+    if (cuota.proyectado && cuota.cuotasRestantes > 0) {
+      total += cuota.montoPorCuota;
+      cantidad += 1;
+      porCategoria[cuota.categoria] = (porCategoria[cuota.categoria] || 0) + cuota.montoPorCuota;
+    }
+  });
+
+  return { mes, total, cantidad, porCategoria };
 }
 
 module.exports = { obtenerMesActualReal, calcularPendientesProximoMes, calcularCuotasActivas };

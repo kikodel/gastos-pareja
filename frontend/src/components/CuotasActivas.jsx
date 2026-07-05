@@ -33,6 +33,7 @@ export default function CuotasActivas({ cuotasActivas }) {
                   <td>{formatearMoneda(c.montoPorCuota)}</td>
                   <td>
                     {formatearMoneda(c.montoRestante)} ({c.cuotasRestantes} cuota{c.cuotasRestantes === 1 ? '' : 's'})
+                    {c.proyectado && <span className="config-familia-ayuda"> (estimado)</span>}
                   </td>
                 </tr>
               ))}

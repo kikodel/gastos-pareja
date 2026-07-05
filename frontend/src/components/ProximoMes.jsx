@@ -17,7 +17,7 @@ export default function ProximoMes({ pendientesProximoMes }) {
         <>
           <p className="total">{formatearMoneda(total)}</p>
           <p className="config-familia-ayuda" style={{ margin: '0 0 10px' }}>
-            {cantidad} gasto{cantidad === 1 ? '' : 's'} ya comprometido{cantidad === 1 ? '' : 's'} (mayormente cuotas en curso)
+            {cantidad} gasto{cantidad === 1 ? '' : 's'} ya comprometido{cantidad === 1 ? '' : 's'} (incluye cuotas en curso y algunas estimadas)
           </p>
           <ul className="proyeccion-lista">
             {categorias.map(([categoria, monto]) => (
