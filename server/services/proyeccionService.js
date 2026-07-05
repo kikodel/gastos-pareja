@@ -62,12 +62,21 @@ function calcularCuotasActivas(gastos, mesActual) {
 
   const resultado = [];
   grupos.forEach((grupo) => {
-    const cuotaMasAvanzada = Math.max(...grupo.filas.map((f) => f.cuotaActual));
+    const filasHastaAhora = grupo.filas.filter((f) => obtenerMesDeFecha(f.fecha) <= mesActual);
+    const filasFuturas = grupo.filas.filter((f) => obtenerMesDeFecha(f.fecha) > mesActual);
+
+    // La "cuota actual" es la mas avanzada entre las filas cuya fecha ya llego (pasada o del
+    // mes en curso). Si se generaron filas reales de meses futuros por adelantado (cuotas de
+    // WhatsApp, o de PDF marcadas como "Cuotas"), esas filas futuras NO cuentan para decidir
+    // si la compra ya esta saldada -- solo cuentan cuando su mes efectivamente llega.
+    const cuotaMasAvanzada =
+      filasHastaAhora.length > 0
+        ? Math.max(...filasHastaAhora.map((f) => f.cuotaActual))
+        : Math.min(...grupo.filas.map((f) => f.cuotaActual)) - 1;
     if (cuotaMasAvanzada >= grupo.cuotasTotal) return; // ya se termino de pagar
 
-    const filasFuturas = grupo.filas.filter((f) => obtenerMesDeFecha(f.fecha) > mesActual);
     const cuotasRestantes = grupo.cuotasTotal - cuotaMasAvanzada;
-    const filaDeReferencia = grupo.filas.find((f) => f.cuotaActual === cuotaMasAvanzada);
+    const filaDeReferencia = grupo.filas.find((f) => f.cuotaActual === cuotaMasAvanzada) || grupo.filas[0];
 
     resultado.push({
       descripcion: grupo.descripcion,
