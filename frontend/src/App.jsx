@@ -10,6 +10,7 @@ import {
   importarPdf,
   confirmarImportacion,
   obtenerImportacionPendiente,
+  obtenerProyeccion,
 } from './api/gastosClient';
 import Filtros from './components/Filtros';
 import PasswordGate from './components/PasswordGate';
@@ -21,6 +22,8 @@ import TablaGastos from './components/TablaGastos';
 import Alertas from './components/Alertas';
 import ConfiguracionFamilia from './components/ConfiguracionFamilia';
 import ImportarPdf from './components/ImportarPdf';
+import ProximoMes from './components/ProximoMes';
+import CuotasActivas from './components/CuotasActivas';
 
 function mesActual() {
   const hoy = new Date();
@@ -42,6 +45,7 @@ export default function App() {
   const [resumen, setResumen] = useState(null);
   const [gastosTotales, setGastosTotales] = useState([]);
   const [config, setConfig] = useState(null);
+  const [proyeccion, setProyeccion] = useState(null);
   const [mostrarConfig, setMostrarConfig] = useState(false);
   const [mostrarImportarPdf, setMostrarImportarPdf] = useState(false);
   const [cargando, setCargando] = useState(true);
@@ -125,6 +129,16 @@ export default function App() {
       .catch((err) => console.error('No se pudo cargar la configuración', err));
   }, [filtros.grupo, autenticado, passwords]);
 
+  useEffect(() => {
+    if (!filtros.grupo || !autenticado) {
+      setProyeccion(null);
+      return;
+    }
+    obtenerProyeccion(filtros.grupo, passwords[filtros.grupo])
+      .then(setProyeccion)
+      .catch((err) => console.error('No se pudo cargar la proyección', err));
+  }, [filtros.grupo, autenticado, passwords]);
+
   const personasDisponibles = useMemo(() => {
     const unicas = new Set(gastosTotales.map((g) => g.persona).filter(Boolean));
     return Array.from(unicas);
@@ -150,10 +164,15 @@ export default function App() {
     setConfig(guardado);
   }
 
+  function refrescarProyeccion() {
+    obtenerProyeccion(filtros.grupo, passwords[filtros.grupo]).then(setProyeccion).catch(() => {});
+  }
+
   async function manejarEliminarGasto(fila) {
     try {
       await eliminarGasto(filtros.grupo, passwords[filtros.grupo], fila);
       await cargarGastosYResumen();
+      refrescarProyeccion();
     } catch (err) {
       console.error(err);
       setError('No se pudo eliminar el gasto. Intentá de nuevo.');
@@ -171,6 +190,7 @@ export default function App() {
   async function manejarConfirmarImportacion(gastosSeleccionados) {
     const resultado = await confirmarImportacion(filtros.grupo, passwords[filtros.grupo], gastosSeleccionados);
     await cargarGastosYResumen();
+    refrescarProyeccion();
     return resultado;
   }
 
@@ -245,9 +265,11 @@ export default function App() {
           <Alertas resumen={resumen} config={config} />
           <div className="grid">
             <ResumenMes totalMes={resumen.totalMes} totalMesAnterior={resumen.totalMesAnterior} />
+            <ProximoMes pendientesProximoMes={proyeccion?.pendientesProximoMes} />
             <GraficoCategorias porCategoria={resumen.porCategoria} />
             <EvolucionMensual evolucionMensual={resumen.evolucionMensual} />
             <ComparacionPersonas porPersona={resumen.porPersona} />
+            <CuotasActivas cuotasActivas={proyeccion?.cuotasActivas} />
             <TablaGastos gastos={gastos} onEliminar={manejarEliminarGasto} />
           </div>
         </>

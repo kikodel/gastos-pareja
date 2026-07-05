@@ -54,3 +54,8 @@ export async function obtenerImportacionPendiente(grupo, password) {
   const { data } = await axios.get('/api/gastos/importacion-pendiente', { params: { grupo, password } });
   return data.movimientos;
 }
+
+export async function obtenerProyeccion(grupo, password) {
+  const { data } = await axios.get('/api/gastos/proyeccion', { params: { grupo, password } });
+  return data;
+}

@@ -24,6 +24,10 @@ Si agregas la cantidad de cuotas al mensaje, el bot divide el monto total en par
 
 Esto crea 6 gastos de $2.000 (`zapatillas (cuota 1/6)`, `zapatillas (cuota 2/6)`, etc.), uno por mes, empezando este mes. Si la division no es exacta, el ultimo mes absorbe la diferencia de redondeo (para que la suma total sea siempre exacta). Las alertas de limite por categoria y meta de ahorro solo consideran el monto de la cuota de ese mes, no el total de la compra.
 
+El dashboard muestra dos vistas basadas en estas cuotas (tarjetas "Pendiente para [mes]" y "Cuotas activas"):
+- **Pendiente para el proximo mes**: suma todo lo que ya esta comprometido para el mes que viene (principalmente cuotas en curso), independientemente del mes que estes mirando en los filtros.
+- **Cuotas activas**: agrupa las cuotas de una misma compra (por mensaje original + persona) y muestra en que cuota vas, cuantas faltan, y cuanto queda por pagar en total. Una compra deja de aparecer ahi cuando ya se pagaron todas sus cuotas.
+
 **Importante — limitacion del WhatsApp Sandbox de Twilio (version gratuita):** no se puede agregar el bot a un grupo de WhatsApp real. Cada persona le escribe sus gastos directo al bot por su chat individual (1 a 1), y todos los gastos se juntan igual en la misma planilla y dashboard. Si mas adelante quieren que el bot lea mensajes de un grupo compartido, hay que migrar a WhatsApp Business Cloud API (Meta), lo cual requiere verificacion de negocio.
 
 ## Categorias

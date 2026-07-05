@@ -6,6 +6,7 @@ const { obtenerGrupo, verificarPassword } = require('../config/grupos');
 const { extraerTextoPdf } = require('../services/pdfService');
 const { extraerMovimientos } = require('../services/importacionService');
 const { obtenerPendiente, limpiarPendiente } = require('../services/importacionesPendientesService');
+const { obtenerMesActualReal, calcularPendientesProximoMes, calcularCuotasActivas } = require('../services/proyeccionService');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -190,6 +191,22 @@ router.get('/importacion-pendiente', (req, res) => {
 
   const movimientos = obtenerPendiente(req.query.grupo);
   res.json({ movimientos });
+});
+
+router.get('/proyeccion', async (req, res) => {
+  const spreadsheetId = resolverSpreadsheetId(req, res);
+  if (!spreadsheetId) return;
+
+  try {
+    const gastos = await leerGastos(spreadsheetId);
+    const mesActual = obtenerMesActualReal();
+    const pendientesProximoMes = calcularPendientesProximoMes(gastos, mesActual);
+    const cuotasActivas = calcularCuotasActivas(gastos, mesActual);
+    res.json({ pendientesProximoMes, cuotasActivas });
+  } catch (err) {
+    console.error('Error al calcular proyeccion:', err);
+    res.status(500).json({ error: 'No se pudo calcular la proyeccion' });
+  }
 });
 
 module.exports = router;
