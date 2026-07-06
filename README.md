@@ -30,6 +30,10 @@ El dashboard muestra dos vistas basadas en estas cuotas (tarjetas "Pendiente par
 
 Las cuotas cargadas por WhatsApp ya generan una fila real por cada mes futuro, asi que su monto restante es exacto. Las cuotas que vienen de un **resumen de tarjeta importado en PDF** (ver seccion de abajo) son distintas: el PDF solo trae una fila por el periodo actual (ej. "cuota 9/12"), sin las filas de los meses que faltan — para esos casos, el dashboard **proyecta** las cuotas restantes asumiendo el mismo monto cada mes, y lo marca como "(estimado)" para dejar en claro que no son filas reales todavia en la Sheet.
 
+### Aviso de posible gasto duplicado
+
+Si mandas un gasto simple (no en cuotas) con la misma descripcion y el mismo monto que uno ya cargado ese mes por cualquier persona del grupo, el bot no lo guarda de una: responde con una advertencia ("ya tenes registrado $X en 'Y' este mes") en vez de registrarlo. Si en serio queres cargarlo de nuevo (por ejemplo, compraste lo mismo dos veces), respondes `si`, `dale`, `confirmo` u `ok` y recien ahi se guarda. Cualquier otro mensaje se procesa como uno nuevo. La advertencia vence a los 15 minutos.
+
 **Importante — limitacion del WhatsApp Sandbox de Twilio (version gratuita):** no se puede agregar el bot a un grupo de WhatsApp real. Cada persona le escribe sus gastos directo al bot por su chat individual (1 a 1), y todos los gastos se juntan igual en la misma planilla y dashboard. Si mas adelante quieren que el bot lea mensajes de un grupo compartido, hay que migrar a WhatsApp Business Cloud API (Meta), lo cual requiere verificacion de negocio.
 
 ## Categorias

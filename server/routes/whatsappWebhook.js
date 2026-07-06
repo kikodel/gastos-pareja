@@ -18,7 +18,15 @@ const { descargarMediaTwilio } = require('../services/mediaService');
 const { extraerTextoPdf } = require('../services/pdfService');
 const { extraerMovimientos } = require('../services/importacionService');
 const { guardarPendiente } = require('../services/importacionesPendientesService');
+const {
+  guardarConfirmacionPendiente,
+  obtenerConfirmacionPendiente,
+  limpiarConfirmacionPendiente,
+} = require('../services/confirmacionesPendientesService');
+const { buscarGastoDuplicado } = require('../services/duplicadosService');
 const { env } = require('../config/env');
+
+const REGEX_CONFIRMACION = /^(si|sí|dale|confirmo|ok|de acuerdo)[.!]?$/i;
 
 const router = express.Router();
 const TIMEZONE = 'America/Argentina/Buenos_Aires';
@@ -50,6 +58,30 @@ router.post('/', validateTwilioSignature, async (req, res) => {
   }
 
   const { persona, spreadsheetId, grupoId } = resuelto;
+
+  const confirmacionPendiente = obtenerConfirmacionPendiente(From);
+  if (confirmacionPendiente) {
+    limpiarConfirmacionPendiente(From);
+    if (REGEX_CONFIRMACION.test((Body || '').trim())) {
+      try {
+        await agregarGasto(spreadsheetId, confirmacionPendiente.datos);
+      } catch (err) {
+        console.error('Error al confirmar gasto duplicado:', err);
+        res.status(500).type('text/xml').send(crearRespuestaError());
+        return;
+      }
+      res.type('text/xml').send(
+        crearRespuestaConfirmacion({
+          monto: confirmacionPendiente.datos.monto,
+          categoria: confirmacionPendiente.datos.categoria,
+          descripcion: confirmacionPendiente.datos.descripcion,
+          persona: confirmacionPendiente.datos.persona,
+        })
+      );
+      return;
+    }
+    // Si no confirma, seguimos procesando el mensaje como uno nuevo.
+  }
 
   const esPdfAdjunto = parseInt(NumMedia, 10) > 0 && (MediaContentType0 || '').toLowerCase() === 'application/pdf';
   if (esPdfAdjunto) {
@@ -102,11 +134,31 @@ router.post('/', validateTwilioSignature, async (req, res) => {
   const fechasCuotas = esCuotas ? generarFechasCuotas(ahora, cuotas) : [ahora];
 
   let alertas = [];
+  let gastosAntes = [];
   try {
-    const [gastosAntes, config] = await Promise.all([
+    const [gastosLeidos, config] = await Promise.all([
       leerGastos(spreadsheetId),
       leerConfig(spreadsheetId),
     ]);
+    gastosAntes = gastosLeidos;
+
+    if (!esCuotas) {
+      const duplicado = buscarGastoDuplicado({ descripcion, monto, mes: mesActual }, gastosAntes);
+      if (duplicado) {
+        guardarConfirmacionPendiente(From, {
+          spreadsheetId,
+          datos: { fecha, persona, monto, categoria, descripcion, mensajeOriginal: original, moneda: 'ARS' },
+        });
+        const fechaExistente = (duplicado.fecha || '').slice(0, 10);
+        res.type('text/xml').send(
+          crearRespuestaTexto(
+            `⚠️ Ya tenés registrado $${monto.toLocaleString('es-AR')} en "${descripcion}" este mes (el ${fechaExistente}, ${duplicado.persona}). ¿Confirmás que querés cargarlo de nuevo? Respondé "sí" para registrarlo, o mandá otro mensaje si era otra cosa.`
+          )
+        );
+        return;
+      }
+    }
+
     alertas = calcularAlertas({ gastosAntes, config, categoria, monto: montosPorCuota[0], mesActual });
   } catch (err) {
     console.error('Error al calcular alertas (se ignora, no bloquea el registro):', err);
