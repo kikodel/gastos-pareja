@@ -243,6 +243,7 @@ export default function App() {
       {autenticado && mostrarImportarPdf && (
         <ImportarPdf
           personasDisponibles={personasDisponibles}
+          gastosExistentes={gastosTotales}
           onExtraer={manejarExtraerPdf}
           onConfirmar={manejarConfirmarImportacion}
           onCargarPendiente={manejarCargarPendiente}

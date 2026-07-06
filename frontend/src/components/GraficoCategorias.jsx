@@ -12,10 +12,12 @@ export default function GraficoCategorias({ porCategoria }) {
     );
   }
 
+  const total = porCategoria.reduce((suma, c) => suma + c.total, 0);
+
   return (
     <div className="card">
       <h2>Gasto por categoria</h2>
-      <ResponsiveContainer width="100%" height={280}>
+      <ResponsiveContainer width="100%" height={240}>
         <PieChart>
           <Pie
             data={porCategoria}
@@ -23,15 +25,19 @@ export default function GraficoCategorias({ porCategoria }) {
             nameKey="categoria"
             cx="50%"
             cy="50%"
-            outerRadius={100}
-            label={({ categoria, percent }) => `${categoria} ${(percent * 100).toFixed(0)}%`}
+            outerRadius={95}
           >
             {porCategoria.map((entrada, index) => (
               <Cell key={entrada.categoria} fill={COLORES[index % COLORES.length]} />
             ))}
           </Pie>
           <Tooltip formatter={(valor) => `$${valor.toLocaleString('es-AR')}`} />
-          <Legend />
+          <Legend
+            formatter={(value, entrada) => {
+              const porcentaje = total > 0 ? ((entrada.payload.total / total) * 100).toFixed(0) : 0;
+              return `${value} ${porcentaje}%`;
+            }}
+          />
         </PieChart>
       </ResponsiveContainer>
     </div>

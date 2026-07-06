@@ -1,15 +1,39 @@
 import { useEffect, useState } from 'react';
 import { CATEGORIAS } from '../constants';
 
-function prepararFilas(extraidos, personasDisponibles) {
+function normalizarDescripcion(descripcion) {
+  return (descripcion || '')
+    .replace(/\s*\(cuota \d+\/\d+\)\s*$/i, '')
+    .replace(/\s*\(d[eé]bito autom[aá]tico\)\s*$/i, '')
+    .trim()
+    .toUpperCase();
+}
+
+function esPosibleDuplicado(mov, gastosExistentes) {
+  const descNormalizada = normalizarDescripcion(mov.descripcion);
+  const mesMov = (mov.fecha || new Date().toISOString().slice(0, 10)).slice(0, 7);
+  const monto = parseFloat(mov.monto);
+  if (!descNormalizada || Number.isNaN(monto)) return false;
+
+  return (gastosExistentes || []).some((g) => {
+    const mismoMes = (g.fecha || '').slice(0, 7) === mesMov;
+    const mismoMonto = Math.abs(g.monto - monto) < 1;
+    const mismaDescripcion = normalizarDescripcion(g.descripcion) === descNormalizada;
+    return mismoMes && mismoMonto && mismaDescripcion;
+  });
+}
+
+function prepararFilas(extraidos, personasDisponibles, gastosExistentes) {
   return extraidos.map((mov) => {
     const detectoCuota =
       mov.cuotaActual !== null && mov.cuotaActual !== undefined && mov.cuotasTotal !== null && mov.cuotasTotal !== undefined;
+    const posibleDuplicado = esPosibleDuplicado(mov, gastosExistentes);
     return {
       ...mov,
       fecha: mov.fecha || new Date().toISOString().slice(0, 10),
       persona: personasDisponibles[0] || '',
-      incluir: true,
+      incluir: !posibleDuplicado,
+      posibleDuplicado,
       tipo: detectoCuota ? 'cuota' : 'unico',
       cuotaActual: detectoCuota ? mov.cuotaActual : '',
       cuotasTotal: detectoCuota ? mov.cuotasTotal : '',
@@ -17,7 +41,7 @@ function prepararFilas(extraidos, personasDisponibles) {
   });
 }
 
-export default function ImportarPdf({ personasDisponibles, onExtraer, onConfirmar, onCerrar, onCargarPendiente }) {
+export default function ImportarPdf({ personasDisponibles, gastosExistentes, onExtraer, onConfirmar, onCerrar, onCargarPendiente }) {
   const [archivo, setArchivo] = useState(null);
   const [movimientos, setMovimientos] = useState(null);
   const [vienePendiente, setVienePendiente] = useState(false);
@@ -30,7 +54,7 @@ export default function ImportarPdf({ personasDisponibles, onExtraer, onConfirma
     onCargarPendiente()
       .then((pendientes) => {
         if (pendientes && pendientes.length > 0) {
-          setMovimientos(prepararFilas(pendientes, personasDisponibles));
+          setMovimientos(prepararFilas(pendientes, personasDisponibles, gastosExistentes));
           setVienePendiente(true);
         }
       })
@@ -44,7 +68,7 @@ export default function ImportarPdf({ personasDisponibles, onExtraer, onConfirma
     setError(null);
     try {
       const extraidos = await onExtraer(archivo);
-      setMovimientos(prepararFilas(extraidos, personasDisponibles));
+      setMovimientos(prepararFilas(extraidos, personasDisponibles, gastosExistentes));
       setVienePendiente(false);
     } catch (err) {
       console.error(err);
@@ -131,6 +155,13 @@ export default function ImportarPdf({ personasDisponibles, onExtraer, onConfirma
             marcás "Cuotas", se generan automáticamente las filas de los meses que faltan.
           </p>
 
+          {movimientos.some((m) => m.posibleDuplicado) && (
+            <p className="aviso-duplicado">
+              ⚠️ Las filas resaltadas parecen ya estar cargadas este mes (misma descripción y monto). Las dejamos
+              desmarcadas por las dudas — tildalas si en realidad son gastos distintos.
+            </p>
+          )}
+
           {personasDisponibles.length > 0 && (
             <label className="importar-pdf-persona-global">
               Asignar persona a todos:
@@ -164,7 +195,7 @@ export default function ImportarPdf({ personasDisponibles, onExtraer, onConfirma
               </thead>
               <tbody>
                 {movimientos.map((mov, i) => (
-                  <tr key={i}>
+                  <tr key={i} className={mov.posibleDuplicado ? 'fila-duplicada' : ''}>
                     <td>
                       <input
                         type="checkbox"
@@ -185,6 +216,11 @@ export default function ImportarPdf({ personasDisponibles, onExtraer, onConfirma
                         value={mov.descripcion}
                         onChange={(e) => actualizarFila(i, 'descripcion', e.target.value)}
                       />
+                      {mov.posibleDuplicado && (
+                        <span className="chip-duplicado" title="Ya existe un gasto similar este mes">
+                          ⚠️ posible duplicado
+                        </span>
+                      )}
                     </td>
                     <td>
                       <input
